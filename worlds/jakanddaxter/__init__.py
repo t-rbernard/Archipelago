@@ -120,10 +120,10 @@ class JakAndDaxterWorld(World):
             classification = ItemClassification.progression
             count = 1
 
-        # TODO - Make 2000 Precursor Orbs, ONLY IF Orbsanity is enabled.
+        # Make 2000 Precursor Orbs.
         elif item in range(jak1_id + Orbs.orb_offset, jak1_max):
             classification = ItemClassification.progression_skip_balancing
-            count = 0
+            count = 2000
 
         # Under normal circumstances, we will create 0 filler items.
         # We will manually create filler items as needed.
@@ -146,6 +146,13 @@ class JakAndDaxterWorld(World):
             if not self.options.enable_move_randomizer and item_table[item_id] in self.item_name_groups["Moves"]:
                 self.multiworld.push_precollected(self.create_item(item_table[item_id]))
                 self.multiworld.itempool += [self.create_item(self.get_filler_item_name())]
+
+            # Handle Orbsanity option.
+            # If it is OFF, don't add any orbs to the item pool.
+            elif not self.options.enable_orbsanity and item_table[item_id] in self.item_name_groups["Precursor Orbs"]:
+                pass
+
+            # Every other scenario.
             else:
                 count, classification = self.item_type_helper(item_id)
                 self.multiworld.itempool += [JakAndDaxterItem(item_table[item_id], classification, item_id, self.player)

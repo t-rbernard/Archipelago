@@ -1,8 +1,9 @@
-import typing
 from BaseClasses import MultiWorld
-from .Items import item_table
 from .JakAndDaxterOptions import JakAndDaxterOptions
-from .locs import (CellLocations as Cells,
+from .Items import item_table
+from .Rules import can_trade, can_reach_orb
+from .locs import (OrbLocations as Orbs,
+                   CellLocations as Cells,
                    ScoutLocations as Scouts)
 from .regs.RegionBase import JakAndDaxterRegion
 from .regs import (GeyserRockRegions as GeyserRock,
@@ -30,7 +31,7 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     multiworld.regions.append(menu)
 
     # Build the special "Free 7 Scout Flies" Region. This is a virtual region always accessible to Menu.
-    # The Power Cells within it are automatically checked when you receive the 7th scout fly for the corresponding cell.
+    # The Locations within are automatically checked when you receive the 7th scout fly for the corresponding cell.
     free7 = JakAndDaxterRegion("'Free 7 Scout Flies' Power Cells", player, multiworld)
     free7.add_cell_locations(Cells.loc7SF_cellTable.keys())
     for scout_fly_cell in free7.locations:
@@ -39,6 +40,18 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
         scout_fly_id = Scouts.to_ap_id(Cells.to_game_id(scout_fly_cell.address))
         scout_fly_cell.access_rule = lambda state, flies=scout_fly_id: state.has(item_table[flies], player, 7)
     multiworld.regions.append(free7)
+    menu.connect(free7)
+
+    # If Orbsanity is enabled, build the special Orbsanity Region. This is a virtual region always accessible to Menu.
+    # The Locations within are automatically checked when you collect an orb.
+    if options.enable_orbsanity:
+        orbs = JakAndDaxterRegion("Orbsanity", player, multiworld)
+
+        for orb_id in Orbs.loc_orbTable:
+            orbs.add_orb_locations([orb_id], access_rule=lambda state, orb=orb_id:
+                                   can_reach_orb(state, player, multiworld, orb))
+        multiworld.regions.append(orbs)
+        menu.connect(orbs)
 
     # Build all regions. Include their intra-connecting Rules, their Locations, and their Location access rules.
     [gr] = GeyserRock.build_regions("Geyser Rock", player, multiworld)
@@ -59,7 +72,6 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     [gmc, fb] = GolAndMaiasCitadel.build_regions("Gol and Maia's Citadel", player, multiworld)
 
     # Define the interconnecting rules.
-    menu.connect(free7)
     menu.connect(gr)
     gr.connect(sv)  # Geyser Rock modified to let you leave at any time.
     sv.connect(fj)

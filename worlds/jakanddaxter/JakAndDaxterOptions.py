@@ -10,14 +10,14 @@ class EnableMoveRandomizer(Toggle):
     display_name = "Enable Move Randomizer"
 
 
-# class EnableOrbsanity(Toggle):
-#     """Enable to include Precursor Orbs as an ordered list of progressive checks.
-#     Each orb you collect triggers the next release in the list.
-#     Adds 2000 items to the pool."""
-#     display_name = "Enable Orbsanity"
+class EnableOrbsanity(Toggle):
+    """Enable to include Precursor Orbs as an ordered list of progressive checks.
+    Each orb you collect triggers the next release in the list.
+    Adds 2000 items to the pool."""
+    display_name = "Enable Orbsanity"
 
 
 @dataclass
 class JakAndDaxterOptions(PerGameCommonOptions):
     enable_move_randomizer: EnableMoveRandomizer
-    # enable_orbsanity: EnableOrbsanity
+    enable_orbsanity: EnableOrbsanity

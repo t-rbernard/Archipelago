@@ -1,9 +1,9 @@
 import typing
 from BaseClasses import MultiWorld, CollectionState
 from .JakAndDaxterOptions import JakAndDaxterOptions
-from .locs import CellLocations as Cells
+from .locs import CellLocations as Cells, OrbLocations as Orbs
 from .Locations import location_table
-from .Regions import JakAndDaxterRegion
+from .regs.RegionBase import JakAndDaxterRegion
 
 
 # TODO - Until we come up with a better progressive system for the traders (that avoids hard-locking if you pay the
@@ -25,6 +25,19 @@ def can_trade(state: CollectionState,
                 and state.can_reach(name_of_previous_trade, "Location", player=player))
     else:
         return accessible_orbs >= required_orbs
+
+
+def can_reach_orb(state: CollectionState,
+                  player: int,
+                  multiworld: MultiWorld,
+                  orb_number: int) -> bool:
+
+    accessible_orbs = 0
+    for region in multiworld.get_regions(player):
+        if state.can_reach(region, "Region", player):
+            accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count
+
+    return accessible_orbs >= orb_number
 
 
 def can_free_scout_flies(state: CollectionState, player: int) -> bool:

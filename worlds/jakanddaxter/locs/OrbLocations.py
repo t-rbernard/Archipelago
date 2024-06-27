@@ -7,14 +7,13 @@ from ..GameID import jak1_id
 # so like Power Cells these are not ordered, nor contiguous, nor exclusively orbs.
 
 # In fact, other ID's in this range belong to actors that spawn orbs when they are activated or when they die,
-# like steel crates, orb caches, Spider Cave gnawers, or jumping on the Plant Boss's head.
+# like steel crates, orb caches, Spider Cave gnawers, or jumping on the Plant Boss's head. These orbs that spawn
+# from parent actors DON'T have an Actor ID themselves - the parent object keeps track of how many of its orbs
+# have been picked up.
 
-# These orbs that spawn from parent actors DON'T have an Actor ID themselves - the parent object keeps
-# track of how many of its orbs have been picked up. If you pick up only some of its orbs, it
-# will respawn when you leave the area, and only drop the remaining number of orbs when activated/killed.
-# Once all the orbs are picked up, the actor will permanently "retire" and never spawn again.
-# The maximum number of orbs that any actor can spawn is 30 (the orb caches in citadel). Covering
-# these ID-less orbs may need to be a future enhancement. TODO ^^
+# Rather than dealing with this mess, we're instead creating a single table of 2000 Locations, each representing 1 orb.
+# When you pick up any orb in the game, you check the next progressive Location in the table. Each Location will have
+# an access rule that requires you to have the equivalent number of orbs in the all the regions you have access to.
 
 # We can use 2^15 to offset them from Orb Caches, because Orb Cache ID's max out at (jak1_id + 17792).
 orb_offset = 32768
@@ -32,68 +31,10 @@ def to_game_id(ap_id: int) -> int:
     return ap_id - jak1_id - orb_offset  # Reverse process, subtract the offsets.
 
 
-# The ID's you see below correspond directly to that orb's Actor ID in the game.
+# The ID's you see below have no correlation to the game.
 
-# Geyser Rock
-locGR_orbTable = {
-}
 
-# Sandover Village
-locSV_orbTable = {
-}
-
-# Forbidden Jungle
-locFJ_orbTable = {
-}
-
-# Sentinel Beach
-locSB_orbTable = {
-}
-
-# Misty Island
-locMI_orbTable = {
-}
-
-# Fire Canyon
-locFC_orbTable = {
-}
-
-# Rock Village
-locRV_orbTable = {
-}
-
-# Precursor Basin
-locPB_orbTable = {
-}
-
-# Lost Precursor City
-locLPC_orbTable = {
-}
-
-# Boggy Swamp
-locBS_orbTable = {
-}
-
-# Mountain Pass
-locMP_orbTable = {
-}
-
-# Volcanic Crater
-locVC_orbTable = {
-}
-
-# Spider Cave
-locSC_orbTable = {
-}
-
-# Snowy Mountain
-locSM_orbTable = {
-}
-
-# Lava Tube
-locLT_orbTable = {
-}
-
-# Gol and Maias Citadel
-locGMC_orbTable = {
+# The table.
+loc_orbTable = {
+    k: "Orb " + str(k + 1) for k in range(2000)
 }

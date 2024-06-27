@@ -85,8 +85,8 @@ move_item_table = {
 item_table = {
     **{Cells.to_ap_id(k): cell_item_table[k] for k in cell_item_table},
     **{Scouts.to_ap_id(k): scout_item_table[k] for k in scout_item_table},
-    **{Orbs.to_ap_id(k): orb_item_table[k] for k in orb_item_table},
     **{Specials.to_ap_id(k): special_item_table[k] for k in special_item_table},
     **{Caches.to_ap_id(k): move_item_table[k] for k in move_item_table},
+    **{Orbs.to_ap_id(k): orb_item_table[k] for k in orb_item_table},
     jak1_max: "Green Eco Pill"  # Filler item.
 }

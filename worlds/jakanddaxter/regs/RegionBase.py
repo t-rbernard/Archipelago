@@ -3,7 +3,8 @@ from BaseClasses import MultiWorld, Region
 from ..GameID import jak1_name
 from ..JakAndDaxterOptions import JakAndDaxterOptions
 from ..Locations import JakAndDaxterLocation, location_table
-from ..locs import (CellLocations as Cells,
+from ..locs import (OrbLocations as Orbs,
+                    CellLocations as Cells,
                     ScoutLocations as Scouts,
                     SpecialLocations as Specials,
                     OrbCacheLocations as Caches)
@@ -58,6 +59,14 @@ class JakAndDaxterRegion(Region):
         """
         for loc in locations:
             self.add_jak_locations(Caches.to_ap_id(loc), access_rule)
+
+    def add_orb_locations(self, locations: List[int], access_rule: Callable = None):
+        """
+        Adds an Orb Location to this region with the given access rule.
+        Converts Game ID's to AP ID's for you.
+        """
+        for loc in locations:
+            self.add_jak_locations(Orbs.to_ap_id(loc), access_rule)
 
     def add_jak_locations(self, ap_id: int, access_rule: Callable = None):
         """
