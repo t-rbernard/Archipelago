@@ -1,7 +1,7 @@
 from BaseClasses import MultiWorld
 from .JakAndDaxterOptions import JakAndDaxterOptions
 from .Items import item_table
-from .Rules import can_trade, can_reach_orb
+from .Rules import can_reach_orbs
 from .locs import (OrbLocations as Orbs,
                    CellLocations as Cells,
                    ScoutLocations as Scouts)
@@ -44,12 +44,16 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
 
     # If Orbsanity is enabled, build the special Orbsanity Region. This is a virtual region always accessible to Menu.
     # The Locations within are automatically checked when you collect an orb.
-    if options.enable_orbsanity:
+    if options.enable_orbsanity.value > 0:
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld)
 
-        for orb_id in Orbs.loc_orbTable:
-            orbs.add_orb_locations([orb_id], access_rule=lambda state, orb=orb_id:
-                                   can_reach_orb(state, player, multiworld, orb))
+        # We already made sure bundle_size is not 0. No division error here!
+        bundle_size = options.enable_orbsanity.value
+        num_bundles = 2000 / bundle_size
+
+        for bundle_id in range(int(num_bundles)):
+            orbs.add_orb_locations([bundle_id], access_rule=lambda state, bundle=bundle_id:
+                                   can_reach_orbs(state, player, multiworld, (bundle_size * (bundle + 1))))
         multiworld.regions.append(orbs)
         menu.connect(orbs)
 

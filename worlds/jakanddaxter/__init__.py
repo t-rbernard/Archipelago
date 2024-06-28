@@ -98,8 +98,7 @@ class JakAndDaxterWorld(World):
         # visualize_regions(self.multiworld.get_region("Menu", self.player), "jak.puml")
 
     # Helper function to reuse some nasty if/else trees.
-    @staticmethod
-    def item_type_helper(item) -> (int, ItemClassification):
+    def item_type_helper(self, item) -> (int, ItemClassification):
         # Make 101 Power Cells.
         if item in range(jak1_id, jak1_id + Scouts.fly_offset):
             classification = ItemClassification.progression_skip_balancing
@@ -120,10 +119,11 @@ class JakAndDaxterWorld(World):
             classification = ItemClassification.progression
             count = 1
 
-        # Make 2000 Precursor Orbs.
+        # Make N Precursor Orb bundles, where N is 2000 / bundle size.
         elif item in range(jak1_id + Orbs.orb_offset, jak1_max):
             classification = ItemClassification.progression_skip_balancing
-            count = 2000
+            bundle_size = self.options.enable_orbsanity.value
+            count = int(2000 / bundle_size)  # We would have skipped this function if bundle_size = 0!
 
         # Under normal circumstances, we will create 0 filler items.
         # We will manually create filler items as needed.
@@ -151,6 +151,16 @@ class JakAndDaxterWorld(World):
             # If it is OFF, don't add any orbs to the item pool.
             elif not self.options.enable_orbsanity and item_table[item_id] in self.item_name_groups["Precursor Orbs"]:
                 pass
+
+            # If it is ON, add bundles of orbs to the item pool (do some string replacement for aesthetics).
+            elif self.options.enable_orbsanity and item_table[item_id] in self.item_name_groups["Precursor Orbs"]:
+                count, classification = self.item_type_helper(item_id)
+                bundle_size = self.options.enable_orbsanity.value
+                name = (item_table[item_id]
+                        .replace("X", str(bundle_size))
+                        .replace("Orbs", "Orb" if bundle_size == 1 else "Orbs"))
+                self.multiworld.itempool += [JakAndDaxterItem(name, classification, item_id, self.player)
+                                             for _ in range(count)]
 
             # Every other scenario.
             else:

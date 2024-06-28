@@ -32,7 +32,8 @@ class JakAndDaxterRegion(Region):
         Converts Game ID's to AP ID's for you.
         """
         for loc in locations:
-            self.add_jak_locations(Cells.to_ap_id(loc), access_rule)
+            ap_id = Cells.to_ap_id(loc)
+            self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
     def add_fly_locations(self, locations: List[int], access_rule: Callable = None):
         """
@@ -40,7 +41,8 @@ class JakAndDaxterRegion(Region):
         Converts Game ID's to AP ID's for you.
         """
         for loc in locations:
-            self.add_jak_locations(Scouts.to_ap_id(loc), access_rule)
+            ap_id = Scouts.to_ap_id(loc)
+            self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
     def add_special_locations(self, locations: List[int], access_rule: Callable = None):
         """
@@ -50,29 +52,32 @@ class JakAndDaxterRegion(Region):
         Power Cell Locations, so you get 2 unlocks for these rather than 1.
         """
         for loc in locations:
-            self.add_jak_locations(Specials.to_ap_id(loc), access_rule)
+            ap_id = Specials.to_ap_id(loc)
+            self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
-    def add_cache_locations(self, locations: List[int], access_rule: Callable = None):
+    def add_cache_locations(self, locations: List[int],  access_rule: Callable = None):
         """
         Adds an Orb Cache Location to this region with the given access rule.
         Converts Game ID's to AP ID's for you.
         """
         for loc in locations:
-            self.add_jak_locations(Caches.to_ap_id(loc), access_rule)
+            ap_id = Caches.to_ap_id(loc)
+            self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
     def add_orb_locations(self, locations: List[int], access_rule: Callable = None):
         """
-        Adds an Orb Location to this region with the given access rule.
+        Adds an Orb Location to this region with the given access rule. Used only when Orbsanity is enabled.
         Converts Game ID's to AP ID's for you.
         """
         for loc in locations:
-            self.add_jak_locations(Orbs.to_ap_id(loc), access_rule)
+            ap_id = Orbs.to_ap_id(loc)
+            self.add_jak_locations(ap_id, f"{self.name} Orb Bundle {loc + 1}", access_rule)
 
-    def add_jak_locations(self, ap_id: int, access_rule: Callable = None):
+    def add_jak_locations(self, ap_id: int, name: str, access_rule: Callable = None):
         """
         Helper function to add Locations. Not to be used directly.
         """
-        location = JakAndDaxterLocation(self.player, location_table[ap_id], ap_id, self)
+        location = JakAndDaxterLocation(self.player, name, ap_id, self)
         if access_rule:
             location.access_rule = access_rule
         self.locations.append(location)

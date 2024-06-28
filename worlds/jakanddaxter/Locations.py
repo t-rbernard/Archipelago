@@ -49,5 +49,4 @@ location_table = {
     **{Scouts.to_ap_id(k): Scouts.locGMC_scoutTable[k] for k in Scouts.locGMC_scoutTable},
     **{Specials.to_ap_id(k): Specials.loc_specialTable[k] for k in Specials.loc_specialTable},
     **{Caches.to_ap_id(k): Caches.loc_orbCacheTable[k] for k in Caches.loc_orbCacheTable},
-    **{Orbs.to_ap_id(k): Orbs.loc_orbTable[k] for k in Orbs.loc_orbTable},
 }

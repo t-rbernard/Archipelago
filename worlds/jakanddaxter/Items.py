@@ -40,7 +40,7 @@ scout_item_table = {
 
 # Orbs are also generic and interchangeable.
 orb_item_table = {
-    1: "Precursor Orb",
+    1: "A Bundle of X Precursor Orbs",
 }
 
 # These are special items representing unique unlocks in the world. Notice that their Item ID equals their

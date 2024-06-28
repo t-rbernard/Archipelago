@@ -27,17 +27,17 @@ def can_trade(state: CollectionState,
         return accessible_orbs >= required_orbs
 
 
-def can_reach_orb(state: CollectionState,
-                  player: int,
-                  multiworld: MultiWorld,
-                  orb_number: int) -> bool:
+def can_reach_orbs(state: CollectionState,
+                   player: int,
+                   multiworld: MultiWorld,
+                   orb_count: int) -> bool:
 
     accessible_orbs = 0
     for region in multiworld.get_regions(player):
         if state.can_reach(region, "Region", player):
             accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count
 
-    return accessible_orbs >= orb_number
+    return accessible_orbs >= orb_count
 
 
 def can_free_scout_flies(state: CollectionState, player: int) -> bool:

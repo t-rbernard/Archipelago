@@ -29,12 +29,3 @@ def to_ap_id(game_id: int) -> int:
 def to_game_id(ap_id: int) -> int:
     assert ap_id >= jak1_id, f"Attempted to convert {ap_id} to a Jak 1 ID, but it already is one."
     return ap_id - jak1_id - orb_offset  # Reverse process, subtract the offsets.
-
-
-# The ID's you see below have no correlation to the game.
-
-
-# The table.
-loc_orbTable = {
-    k: "Orb " + str(k + 1) for k in range(2000)
-}
