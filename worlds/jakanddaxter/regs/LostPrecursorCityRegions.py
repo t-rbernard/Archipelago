@@ -1,10 +1,11 @@
 from typing import List
 from BaseClasses import CollectionState, MultiWorld
 from .RegionBase import JakAndDaxterRegion
+from .. import JakAndDaxterOptions
 from ..Rules import can_free_scout_flies, can_fight
 
 
-def build_regions(level_name: str, player: int, multiworld: MultiWorld) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
 
     # Just the starting area.
     main_area = JakAndDaxterRegion("Main Area", player, multiworld, level_name, 4)

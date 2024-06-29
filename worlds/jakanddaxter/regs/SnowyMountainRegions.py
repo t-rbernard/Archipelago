@@ -1,11 +1,12 @@
 from typing import List
 from BaseClasses import CollectionState, MultiWorld
 from .RegionBase import JakAndDaxterRegion
+from .. import JakAndDaxterOptions
 from ..Rules import can_free_scout_flies, can_fight
 
 
 # God help me... here we go.
-def build_regions(level_name: str, player: int, multiworld: MultiWorld) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
 
     # We need a few helper functions.
     def can_cross_main_gap(state: CollectionState, p: int) -> bool:

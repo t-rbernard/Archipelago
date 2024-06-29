@@ -39,8 +39,28 @@ scout_item_table = {
 }
 
 # Orbs are also generic and interchangeable.
+# These items are only used by Orbsanity, and only one of these items will be used corresponding to the chosen value.
 orb_item_table = {
-    1: "A Bundle of X Precursor Orbs",
+    1: "Precursor Orb",
+    2: "Bundle of 2 Precursor Orbs",
+    4: "Bundle of 4 Precursor Orbs",
+    5: "Bundle of 5 Precursor Orbs",
+    8: "Bundle of 8 Precursor Orbs",
+    10: "Bundle of 10 Precursor Orbs",
+    16: "Bundle of 16 Precursor Orbs",
+    20: "Bundle of 20 Precursor Orbs",
+    25: "Bundle of 25 Precursor Orbs",
+    40: "Bundle of 40 Precursor Orbs",
+    50: "Bundle of 50 Precursor Orbs",
+    80: "Bundle of 80 Precursor Orbs",
+    100: "Bundle of 100 Precursor Orbs",
+    125: "Bundle of 125 Precursor Orbs",
+    200: "Bundle of 200 Precursor Orbs",
+    250: "Bundle of 250 Precursor Orbs",
+    400: "Bundle of 400 Precursor Orbs",
+    500: "Bundle of 500 Precursor Orbs",
+    1000: "Bundle of 1000 Precursor Orbs",
+    2000: "Bundle of 2000 Precursor Orbs",
 }
 
 # These are special items representing unique unlocks in the world. Notice that their Item ID equals their

@@ -1,19 +1,20 @@
 from typing import List
 from BaseClasses import CollectionState, MultiWorld
 from .RegionBase import JakAndDaxterRegion
+from .. import JakAndDaxterOptions
 from ..Rules import can_free_scout_flies, can_trade
 
 
-def build_regions(level_name: str, player: int, multiworld: MultiWorld) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
 
     main_area = JakAndDaxterRegion("Main Area", player, multiworld, level_name, 26)
 
     # Yakows requires no combat.
     main_area.add_cell_locations([10])
     main_area.add_cell_locations([11], access_rule=lambda state:
-                                 can_trade(state, player, multiworld, 1530))
+                                 can_trade(state, player, multiworld, options, 1530))
     main_area.add_cell_locations([12], access_rule=lambda state:
-                                 can_trade(state, player, multiworld, 1530))
+                                 can_trade(state, player, multiworld, options, 1530))
 
     # These 4 scout fly boxes can be broken by running with all the blue eco from Sentinel Beach.
     main_area.add_fly_locations([262219, 327755, 131147, 65611])
@@ -32,9 +33,9 @@ def build_regions(level_name: str, player: int, multiworld: MultiWorld) -> List[
 
     oracle_platforms = JakAndDaxterRegion("Oracle Platforms", player, multiworld, level_name, 6)
     oracle_platforms.add_cell_locations([13], access_rule=lambda state:
-                                        can_trade(state, player, multiworld, 1530))
+                                        can_trade(state, player, multiworld, options, 1530))
     oracle_platforms.add_cell_locations([14], access_rule=lambda state:
-                                        can_trade(state, player, multiworld, 1530, 13))
+                                        can_trade(state, player, multiworld, options, 1530, 13))
     oracle_platforms.add_fly_locations([393291], access_rule=lambda state:
                                        can_free_scout_flies(state, player))
 

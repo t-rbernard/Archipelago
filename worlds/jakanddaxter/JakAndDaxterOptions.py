@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from Options import Toggle, PerGameCommonOptions, Choice
 
@@ -22,6 +21,7 @@ class EnableOrbsanity(Choice):
     option_1_orb = 1
     option_2_orbs = 2
     option_4_orbs = 4
+    option_5_orbs = 5
     option_8_orbs = 8
     option_10_orbs = 10
     option_16_orbs = 16
@@ -34,6 +34,7 @@ class EnableOrbsanity(Choice):
     option_125_orbs = 125
     option_200_orbs = 200
     option_250_orbs = 250
+    option_400_orbs = 400
     option_500_orbs = 500
     option_1000_orbs = 1000
     option_2000_orbs = 2000

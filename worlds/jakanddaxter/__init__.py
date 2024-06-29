@@ -3,6 +3,7 @@ import settings
 
 from Utils import local_path, visualize_regions
 from BaseClasses import Item, ItemClassification, Tutorial
+from .Rules import can_trade, can_trade_orbsanity
 from .GameID import jak1_id, jak1_name, jak1_max
 from .JakAndDaxterOptions import JakAndDaxterOptions
 from .Locations import JakAndDaxterLocation, location_table
@@ -73,7 +74,6 @@ class JakAndDaxterWorld(World):
     # Web world
     web = JakAndDaxterWebWorld()
 
-    # Items and Locations
     # Stored as {ID: Name} pairs, these must now be swapped to {Name: ID} pairs.
     # Remember, the game ID and various offsets for each item type have already been calculated.
     item_name_to_id = {item_table[k]: k for k in item_table}
@@ -91,9 +91,8 @@ class JakAndDaxterWorld(World):
                            if k in range(jak1_id + Orbs.orb_offset, jak1_max)},
     }
 
-    # Regions and Rules
     # This will also set Locations, Location access rules, Region access rules, etc.
-    def create_regions(self):
+    def create_regions(self) -> None:
         create_regions(self.multiworld, self.options, self.player)
         # visualize_regions(self.multiworld.get_region("Menu", self.player), "jak.puml")
 
@@ -122,8 +121,7 @@ class JakAndDaxterWorld(World):
         # Make N Precursor Orb bundles, where N is 2000 / bundle size.
         elif item in range(jak1_id + Orbs.orb_offset, jak1_max):
             classification = ItemClassification.progression_skip_balancing
-            bundle_size = self.options.enable_orbsanity.value
-            count = int(2000 / bundle_size)  # We would have skipped this function if bundle_size = 0!
+            count = int(2000 / self.options.enable_orbsanity.value)
 
         # Under normal circumstances, we will create 0 filler items.
         # We will manually create filler items as needed.
@@ -137,36 +135,30 @@ class JakAndDaxterWorld(World):
 
         return count, classification
 
-    def create_items(self):
-        for item_id in item_table:
+    def create_items(self) -> None:
+        for item_name in self.item_name_to_id:
+            item_id = self.item_name_to_id[item_name]
 
             # Handle Move Randomizer option.
             # If it is OFF, put all moves in your starting inventory instead of the item pool,
             # then fill the item pool with a corresponding amount of filler items.
-            if not self.options.enable_move_randomizer and item_table[item_id] in self.item_name_groups["Moves"]:
-                self.multiworld.push_precollected(self.create_item(item_table[item_id]))
+            if item_name in self.item_name_groups["Moves"] and not self.options.enable_move_randomizer:
+                self.multiworld.push_precollected(self.create_item(item_name))
                 self.multiworld.itempool += [self.create_item(self.get_filler_item_name())]
+                continue
 
             # Handle Orbsanity option.
             # If it is OFF, don't add any orbs to the item pool.
-            elif not self.options.enable_orbsanity and item_table[item_id] in self.item_name_groups["Precursor Orbs"]:
-                pass
+            # If it is ON, only add the orb bundle that matches the choice in options.
+            if (item_name in self.item_name_groups["Precursor Orbs"]
+                and ((self.options.enable_orbsanity.value < 1
+                      or Orbs.to_game_id(item_id) != self.options.enable_orbsanity.value))):
+                continue
 
-            # If it is ON, add bundles of orbs to the item pool (do some string replacement for aesthetics).
-            elif self.options.enable_orbsanity and item_table[item_id] in self.item_name_groups["Precursor Orbs"]:
-                count, classification = self.item_type_helper(item_id)
-                bundle_size = self.options.enable_orbsanity.value
-                name = (item_table[item_id]
-                        .replace("X", str(bundle_size))
-                        .replace("Orbs", "Orb" if bundle_size == 1 else "Orbs"))
-                self.multiworld.itempool += [JakAndDaxterItem(name, classification, item_id, self.player)
-                                             for _ in range(count)]
-
-            # Every other scenario.
-            else:
-                count, classification = self.item_type_helper(item_id)
-                self.multiworld.itempool += [JakAndDaxterItem(item_table[item_id], classification, item_id, self.player)
-                                             for _ in range(count)]
+            # In every other scenario, do this.
+            count, classification = self.item_type_helper(item_id)
+            self.multiworld.itempool += [JakAndDaxterItem(item_name, classification, item_id, self.player)
+                                         for _ in range(count)]
 
     def create_item(self, name: str) -> Item:
         item_id = self.item_name_to_id[name]
