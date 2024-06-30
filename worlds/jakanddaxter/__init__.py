@@ -3,7 +3,6 @@ import settings
 
 from Utils import local_path, visualize_regions
 from BaseClasses import Item, ItemClassification, Tutorial
-from .Rules import can_trade, can_trade_orbsanity
 from .GameID import jak1_id, jak1_name, jak1_max
 from .JakAndDaxterOptions import JakAndDaxterOptions
 from .Locations import JakAndDaxterLocation, location_table
@@ -96,6 +95,15 @@ class JakAndDaxterWorld(World):
         create_regions(self.multiworld, self.options, self.player)
         # visualize_regions(self.multiworld.get_region("Menu", self.player), "jak.puml")
 
+    # Helper function to get the correct orb bundle size.
+    def get_orb_bundle_size(self) -> int:
+        if self.options.enable_orbsanity.value == 1:
+            return self.options.level_orbsanity_bundle_size.value
+        elif self.options.enable_orbsanity.value == 2:
+            return self.options.global_orbsanity_bundle_size.value
+        else:
+            return 0
+
     # Helper function to reuse some nasty if/else trees.
     def item_type_helper(self, item) -> (int, ItemClassification):
         # Make 101 Power Cells.
@@ -121,7 +129,8 @@ class JakAndDaxterWorld(World):
         # Make N Precursor Orb bundles, where N is 2000 / bundle size.
         elif item in range(jak1_id + Orbs.orb_offset, jak1_max):
             classification = ItemClassification.progression_skip_balancing
-            count = int(2000 / self.options.enable_orbsanity.value)
+            size = self.get_orb_bundle_size()
+            count = int(2000 / size) if size > 0 else 0  # Don't divide by zero!
 
         # Under normal circumstances, we will create 0 filler items.
         # We will manually create filler items as needed.
@@ -151,8 +160,8 @@ class JakAndDaxterWorld(World):
             # If it is OFF, don't add any orbs to the item pool.
             # If it is ON, only add the orb bundle that matches the choice in options.
             if (item_name in self.item_name_groups["Precursor Orbs"]
-                and ((self.options.enable_orbsanity.value < 1
-                      or Orbs.to_game_id(item_id) != self.options.enable_orbsanity.value))):
+                and ((self.options.enable_orbsanity.value == 0
+                      or Orbs.to_game_id(item_id) != self.get_orb_bundle_size()))):
                 continue
 
             # In every other scenario, do this.

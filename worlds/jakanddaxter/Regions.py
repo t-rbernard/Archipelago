@@ -42,17 +42,16 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     multiworld.regions.append(free7)
     menu.connect(free7)
 
-    # If Orbsanity is enabled, build the special Orbsanity Region. This is a virtual region always accessible to Menu.
-    # The Locations within are automatically checked when you collect an orb.
-    if options.enable_orbsanity.value > 0:
+    # If Global Orbsanity is enabled, build the special Orbsanity Region. This is a virtual region always
+    # accessible to Menu. The Locations within are automatically checked when you collect enough orbs.
+    if options.enable_orbsanity.value == 2:
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld)
 
-        # We already made sure bundle_size is not 0. No division error here!
-        bundle_size = options.enable_orbsanity.value
+        bundle_size = options.global_orbsanity_bundle_size.value
         bundle_count = int(2000 / bundle_size)
         for bundle_id in range(bundle_count):
             orbs.add_orb_locations([bundle_id], access_rule=lambda state, bundle=bundle_id:
-                                   can_reach_orbs(state, player, multiworld) >= (bundle_size * (bundle + 1)))
+                                   can_reach_orbs(state, player, multiworld, options) >= (bundle_size * (bundle + 1)))
         multiworld.regions.append(orbs)
         menu.connect(orbs)
 
