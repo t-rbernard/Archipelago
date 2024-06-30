@@ -55,7 +55,7 @@ class JakAndDaxterRegion(Region):
             ap_id = Specials.to_ap_id(loc)
             self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
-    def add_cache_locations(self, locations: List[int],  access_rule: Callable = None):
+    def add_cache_locations(self, locations: List[int], access_rule: Callable = None):
         """
         Adds an Orb Cache Location to this region with the given access rule.
         Converts Game ID's to AP ID's for you.
@@ -64,14 +64,19 @@ class JakAndDaxterRegion(Region):
             ap_id = Caches.to_ap_id(loc)
             self.add_jak_locations(ap_id, location_table[ap_id], access_rule)
 
-    def add_orb_locations(self, locations: List[int], access_rule: Callable = None):
+    def add_orb_locations(self, bundle_id: int, access_rule: Callable = None):
         """
-        Adds an Orb Location to this region with the given access rule. Used only when Orbsanity is enabled.
-        Converts Game ID's to AP ID's for you.
+        Adds Orb Bundle Locations to this region equal to `bundle_count`. Used only when Per-Level Orbsanity is enabled.
+        The orb factory class will handle AP ID enumeration.
         """
-        for loc in locations:
-            ap_id = Orbs.to_ap_id(loc)
-            self.add_jak_locations(ap_id, f"{self.name} Orb Bundle {loc + 1}", access_rule)
+        bundle_address = Orbs.orb_factory.make_new_address()
+        location = JakAndDaxterLocation(self.player,
+                                        f"{self.level_name} Orb Bundle {bundle_id + 1}".strip(),
+                                        bundle_address,
+                                        self)
+        if access_rule:
+            location.access_rule = access_rule
+        self.locations.append(location)
 
     def add_jak_locations(self, ap_id: int, name: str, access_rule: Callable = None):
         """

@@ -50,7 +50,7 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
         bundle_size = options.global_orbsanity_bundle_size.value
         bundle_count = int(2000 / bundle_size)
         for bundle_id in range(bundle_count):
-            orbs.add_orb_locations([bundle_id], access_rule=lambda state, bundle=bundle_id:
+            orbs.add_orb_locations(bundle_id, access_rule=lambda state, bundle=bundle_id:
                                    can_reach_orbs(state, player, multiworld, options) >= (bundle_size * (bundle + 1)))
         multiworld.regions.append(orbs)
         menu.connect(orbs)

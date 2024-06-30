@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from ..GameID import jak1_id
 
 # Precursor Orbs are not necessarily given ID's by the game.
@@ -11,9 +13,9 @@ from ..GameID import jak1_id
 # from parent actors DON'T have an Actor ID themselves - the parent object keeps track of how many of its orbs
 # have been picked up.
 
-# Rather than dealing with this mess, we're instead creating a single table of 2000 Locations, each representing 1 orb.
-# When you pick up any orb in the game, you check the next progressive Location in the table. Each Location will have
-# an access rule that requires you to have the equivalent number of orbs in the all the regions you have access to.
+# In order to deal with this mess, we're creating a factory class that will generate Orb Locations for us.
+# This will be compatible with both Global Orbsanity and Per-Level Orbsanity, allowing us to create any
+# number of Locations depending on the bundle size chosen, while also guaranteeing that each has a unique address.
 
 # We can use 2^15 to offset them from Orb Caches, because Orb Cache ID's max out at (jak1_id + 17792).
 orb_offset = 32768
@@ -29,3 +31,16 @@ def to_ap_id(game_id: int) -> int:
 def to_game_id(ap_id: int) -> int:
     assert ap_id >= jak1_id, f"Attempted to convert {ap_id} to a Jak 1 ID, but it already is one."
     return ap_id - jak1_id - orb_offset  # Reverse process, subtract the offsets.
+
+
+@dataclass
+class OrbBundleFactory:
+    current_bundle: int = 0
+
+    def make_new_address(self) -> int:
+        result = to_ap_id(self.current_bundle)
+        self.current_bundle += 1
+        return result
+
+
+orb_factory = OrbBundleFactory()

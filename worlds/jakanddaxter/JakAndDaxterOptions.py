@@ -9,7 +9,7 @@ class EnableMoveRandomizer(Toggle):
 
 
 class EnableOrbsanity(Choice):
-    """Enable to include bundles of Precursor Orb as an ordered list of progressive checks. Every time you collect
+    """Enable to include bundles of Precursor Orbs as an ordered list of progressive checks. Every time you collect
     the chosen number of orbs, you will trigger the next release in the list. "Per Level" means these lists are
     generated and populated for each level in the game (Geyser Rock, Sandover Village, etc.). "Global" means there is
     only one list for the entire game.
@@ -70,5 +70,5 @@ class PerLevelOrbsanityBundleSize(Choice):
 class JakAndDaxterOptions(PerGameCommonOptions):
     enable_move_randomizer: EnableMoveRandomizer
     enable_orbsanity: EnableOrbsanity
-    global_orbsanity_bundle_size = GlobalOrbsanityBundleSize
-    level_orbsanity_bundle_size = PerLevelOrbsanityBundleSize
+    global_orbsanity_bundle_size: GlobalOrbsanityBundleSize
+    level_orbsanity_bundle_size: PerLevelOrbsanityBundleSize
