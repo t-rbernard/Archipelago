@@ -34,12 +34,95 @@ def to_game_id(ap_id: int) -> int:
 
 
 # Use this when the Memory Reader learns that you checked a specific bundle.
-def find_address(level_index: int, orb_count: int):
-    result = to_ap_id((level_index * 200) + orb_count)  # No level has > 200 orbs.
+# Offset each level by 200 orbs (max number in any level),      {200, 400, ...}
+# then divide orb count by bundle size,                         {201, 202, ...}
+# then subtract 1.                                              {200, 201, ...}
+def find_address(level_index: int, orb_count: int, bundle_size: int) -> int:
+    result = (level_index * 200) + (orb_count // bundle_size) - 1
     return result
 
 
 # Use this when assigning addresses during region generation.
-def create_address(level_index: int, bundle_index: int, bundle_size: int) -> int:
-    result = to_ap_id((level_index * 200) + (bundle_index * bundle_size))  # No level has > 200 orbs.
+def create_address(level_index: int, bundle_index: int) -> int:
+    result = (level_index * 200) + bundle_index
     return result
+
+
+# What follows is our method of generating all the name/ID pairs for location_name_to_id.
+# Remember that not every bundle will be used in the actual seed, we just need this as a static map of strings to ints.
+level_info = {
+    "": {
+        "level_index": 16,  # Global
+        "orbs": 2000
+    },
+    "Geyser Rock": {
+        "level_index": 0,
+        "orbs": 50
+    },
+    "Sandover Village": {
+        "level_index": 1,
+        "orbs": 50
+    },
+    "Sentinel Beach": {
+        "level_index": 2,
+        "orbs": 150
+    },
+    "Forbidden Jungle": {
+        "level_index": 3,
+        "orbs": 150
+    },
+    "Misty Island": {
+        "level_index": 4,
+        "orbs": 150
+    },
+    "Fire Canyon": {
+        "level_index": 5,
+        "orbs": 50
+    },
+    "Rock Village": {
+        "level_index": 6,
+        "orbs": 50
+    },
+    "Lost Precursor City": {
+        "level_index": 7,
+        "orbs": 200
+    },
+    "Boggy Swamp": {
+        "level_index": 8,
+        "orbs": 200
+    },
+    "Precursor Basin": {
+        "level_index": 9,
+        "orbs": 200
+    },
+    "Mountain Pass": {
+        "level_index": 10,
+        "orbs": 50
+    },
+    "Volcanic Crater": {
+        "level_index": 11,
+        "orbs": 50
+    },
+    "Snowy Mountain": {
+        "level_index": 12,
+        "orbs": 200
+    },
+    "Spider Cave": {
+        "level_index": 13,
+        "orbs": 200
+    },
+    "Lava Tube": {
+        "level_index": 14,
+        "orbs": 50
+    },
+    "Gol and Maia's Citadel": {
+        "level_index": 15,
+        "orbs": 200
+    }
+}
+
+loc_orbBundleTable = {
+    create_address(level_info[name]["level_index"], index): f"{name} Orb Bundle {index + 1}".strip()
+    for name in level_info
+    for index in range(level_info[name]["orbs"])
+}

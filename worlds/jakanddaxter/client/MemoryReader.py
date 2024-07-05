@@ -281,6 +281,7 @@ class JakAndDaxterMemoryReader:
             # self.moverando_enabled = bool(moverando_flag)
 
             orbsanity_option = self.read_goal_address(orbsanity_option_offset, sizeof_uint8)
+            orbsanity_bundle = self.read_goal_address(orbsanity_bundle_offset, sizeof_uint32)
             self.orbsanity_enabled = orbsanity_option > 0
 
             # Treat these values like the Deathlink flag. They need to be reset once they are checked.
@@ -288,10 +289,9 @@ class JakAndDaxterMemoryReader:
             collected_bundle_count = self.read_goal_address(collected_bundle_count_offset, sizeof_uint32)
 
             if orbsanity_option > 0 and collected_bundle_count > 0:
-                if orbsanity_option > 1:
-                    bundle_ap_id = Orbs.find_address(0, collected_bundle_count)  # Global => level_index = 0.
-                else:
-                    bundle_ap_id = Orbs.find_address(collected_bundle_level, collected_bundle_count)
+                bundle_ap_id = Orbs.to_ap_id(Orbs.find_address(collected_bundle_level,
+                                                               collected_bundle_count,
+                                                               orbsanity_bundle))
 
                 if bundle_ap_id not in self.location_outbox:
                     self.location_outbox.append(bundle_ap_id)

@@ -69,10 +69,10 @@ class JakAndDaxterRegion(Region):
         Adds Orb Bundle Locations to this region equal to `bundle_count`. Used only when Per-Level Orbsanity is enabled.
         The orb factory class will handle AP ID enumeration.
         """
-        bundle_address = Orbs.create_address(level_index, bundle_index, bundle_size)
+        bundle_address = Orbs.create_address(level_index, bundle_index)
         location = JakAndDaxterLocation(self.player,
                                         f"{self.level_name} Orb Bundle {bundle_index + 1}".strip(),
-                                        bundle_address,
+                                        Orbs.to_ap_id(bundle_address),
                                         self)
         if access_rule:
             location.access_rule = access_rule
