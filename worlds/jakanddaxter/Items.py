@@ -39,7 +39,8 @@ scout_item_table = {
 }
 
 # Orbs are also generic and interchangeable.
-# These items are only used by Orbsanity, and only one of these items will be used corresponding to the chosen value.
+# These items are only used by Orbsanity, and only one of these
+# items will be used corresponding to the chosen bundle size.
 orb_item_table = {
     1: "Precursor Orb",
     2: "Bundle of 2 Precursor Orbs",

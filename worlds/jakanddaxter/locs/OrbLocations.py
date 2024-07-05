@@ -33,14 +33,13 @@ def to_game_id(ap_id: int) -> int:
     return ap_id - jak1_id - orb_offset  # Reverse process, subtract the offsets.
 
 
-@dataclass
-class OrbBundleFactory:
-    current_bundle: int = 0
-
-    def make_new_address(self) -> int:
-        result = to_ap_id(self.current_bundle)
-        self.current_bundle += 1
-        return result
+# Use this when the Memory Reader learns that you checked a specific bundle.
+def find_address(level_index: int, orb_count: int):
+    result = to_ap_id((level_index * 200) + orb_count)  # No level has > 200 orbs.
+    return result
 
 
-orb_factory = OrbBundleFactory()
+# Use this when assigning addresses during region generation.
+def create_address(level_index: int, bundle_index: int, bundle_size: int) -> int:
+    result = to_ap_id((level_index * 200) + (bundle_index * bundle_size))  # No level has > 200 orbs.
+    return result

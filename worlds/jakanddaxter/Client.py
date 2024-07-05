@@ -107,6 +107,14 @@ class JakAndDaxterContext(CommonContext):
         await self.send_connect()
 
     def on_package(self, cmd: str, args: dict):
+
+        if cmd == "Connected":
+            slot_data = args["slot_data"]
+            if slot_data["enable_orbsanity"] == 1:
+                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["level_orbsanity_bundle_size"])
+            elif slot_data["enable_orbsanity"] == 2:
+                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["global_orbsanity_bundle_size"])
+
         if cmd == "ReceivedItems":
             for index, item in enumerate(args["items"], start=args["index"]):
                 logger.debug(f"index: {str(index)}, item: {str(item)}")
@@ -155,6 +163,14 @@ class JakAndDaxterContext(CommonContext):
     def on_deathlink_toggle(self):
         create_task_log_exception(self.ap_inform_deathlink_toggle())
 
+    async def repl_reset_orbsanity(self):
+        if self.memr.orbsanity_enabled:
+            self.memr.reset_orbsanity = False
+            self.repl.reset_orbsanity()
+
+    def on_orbsanity_check(self):
+        create_task_log_exception(self.repl_reset_orbsanity())
+
     async def run_repl_loop(self):
         while True:
             await self.repl.main_tick()
@@ -165,7 +181,8 @@ class JakAndDaxterContext(CommonContext):
             await self.memr.main_tick(self.on_location_check,
                                       self.on_finish_check,
                                       self.on_deathlink_check,
-                                      self.on_deathlink_toggle)
+                                      self.on_deathlink_toggle,
+                                      self.on_orbsanity_check)
             await asyncio.sleep(0.1)
 
 

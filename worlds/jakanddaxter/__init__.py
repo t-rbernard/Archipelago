@@ -1,4 +1,4 @@
-import typing
+from typing import Dict, Any, ClassVar
 import settings
 
 from Utils import local_path, visualize_regions
@@ -66,7 +66,7 @@ class JakAndDaxterWorld(World):
     required_client_version = (0, 4, 6)
 
     # Options
-    settings: typing.ClassVar[JakAndDaxterSettings]
+    settings: ClassVar[JakAndDaxterSettings]
     options_dataclass = JakAndDaxterOptions
     options: JakAndDaxterOptions
 
@@ -176,3 +176,9 @@ class JakAndDaxterWorld(World):
 
     def get_filler_item_name(self) -> str:
         return "Green Eco Pill"
+
+    def fill_slot_data(self) -> Dict[str, Any]:
+        return self.options.as_dict("enable_move_randomizer",
+                                    "enable_orbsanity",
+                                    "global_orbsanity_bundle_size",
+                                    "level_orbsanity_bundle_size")
