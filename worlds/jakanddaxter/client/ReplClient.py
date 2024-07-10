@@ -309,17 +309,11 @@ class JakAndDaxterReplClient:
         return ok
 
     def setup_orbsanity(self, option: int, bundle: int) -> bool:
-        ok = self.send_form(f"(set! (-> *ap-info-jak1* orbsanity-option) {option})")
+        ok = self.send_form(f"(ap-setup-orbs! (the uint {option}) (the uint {bundle}))")
         if ok:
-            logger.debug(f"Set orbsanity flag to {option}!")
+            logger.debug(f"Set up orbsanity: Option {option}, Bundle {bundle}!")
         else:
-            logger.error(f"Unable to set orbsanity flag!")
-
-        ok = self.send_form(f"(set! (-> *ap-info-jak1* orbsanity-bundle) {bundle})")
-        if ok:
-            logger.debug(f"Set orbsanity bundle size to {bundle}!")
-        else:
-            logger.error(f"Unable to set orbsanity bundle size!")
+            logger.error(f"Unable to set up orbsanity: Option {option}, Bundle {bundle}!")
         return ok
 
     def reset_orbsanity(self) -> bool:

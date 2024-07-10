@@ -21,6 +21,7 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
                 or (state.has("Punch", p) and state.has("Punch Uppercut", p)))
 
     # Orb crates and fly box in this area can be gotten with yellow eco and goggles.
+    # Start with the first yellow eco cluster near first_bats and work your way backward toward the entrance.
     main_area = JakAndDaxterRegion("Main Area", player, multiworld, level_name, 23)
     main_area.add_fly_locations([43])
 

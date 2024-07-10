@@ -114,6 +114,8 @@ class JakAndDaxterContext(CommonContext):
                 self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["level_orbsanity_bundle_size"])
             elif slot_data["enable_orbsanity"] == 2:
                 self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["global_orbsanity_bundle_size"])
+            else:
+                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], 1)
 
         if cmd == "ReceivedItems":
             for index, item in enumerate(args["items"], start=args["index"]):

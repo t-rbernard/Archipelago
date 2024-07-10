@@ -289,15 +289,18 @@ class JakAndDaxterMemoryReader:
             collected_bundle_count = self.read_goal_address(collected_bundle_count_offset, sizeof_uint32)
 
             if orbsanity_option > 0 and collected_bundle_count > 0:
-                bundle_ap_id = Orbs.to_ap_id(Orbs.find_address(collected_bundle_level,
-                                                               collected_bundle_count,
-                                                               orbsanity_bundle))
+                # Count up from the first bundle, by bundle size, until you reach the latest collected bundle.
+                # e.g. {25, 50, 75, 100, 125...}
+                for k in range(orbsanity_bundle,
+                               orbsanity_bundle + collected_bundle_count,  # Range max is non-inclusive.
+                               orbsanity_bundle):
 
-                if bundle_ap_id not in self.location_outbox:
-                    self.location_outbox.append(bundle_ap_id)
-                    logger.debug("Checked orb bundle: " + str(bundle_ap_id))
+                    bundle_ap_id = Orbs.to_ap_id(Orbs.find_address(collected_bundle_level, k, orbsanity_bundle))
+                    if bundle_ap_id not in self.location_outbox:
+                        self.location_outbox.append(bundle_ap_id)
+                        logger.debug("Checked orb bundle: " + str(bundle_ap_id))
 
-                self.reset_orbsanity = True
+                # self.reset_orbsanity = True
 
         except (ProcessError, MemoryReadError, WinAPIError):
             logger.error("The gk process has died. Restart the game and run \"/memr connect\" again.")

@@ -34,8 +34,9 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
     orb_cache.add_cache_locations([10945], access_rule=lambda state:
                                   (state.has("Roll", player) and state.has("Roll Jump", player)))
 
+    # Fly here can be gotten with Yellow Eco from Boggy, goggles, and no extra movement options (see fly ID 43).
     pontoon_bridge = JakAndDaxterRegion("Pontoon Bridge", player, multiworld, level_name, 7)
-    pontoon_bridge.add_fly_locations([393292], access_rule=lambda state: can_free_scout_flies(state, player))
+    pontoon_bridge.add_fly_locations([393292])
 
     klaww_cliff = JakAndDaxterRegion("Klaww's Cliff", player, multiworld, level_name, 0)
 
