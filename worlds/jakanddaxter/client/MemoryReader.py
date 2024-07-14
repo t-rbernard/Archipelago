@@ -72,6 +72,19 @@ orbsanity_bundle_offset = offsets.define(sizeof_uint32)
 collected_bundle_level_offset = offsets.define(sizeof_uint8)
 collected_bundle_count_offset = offsets.define(sizeof_uint32)
 
+# Progression and Completion information.
+fire_canyon_cell_count_offset = offsets.define(sizeof_uint8)
+mountain_pass_cell_count_offset = offsets.define(sizeof_uint8)
+lava_tube_cell_count_offset = offsets.define(sizeof_uint8)
+completion_condition_offset = offsets.define(sizeof_uint8)
+completed_offset = offsets.define(sizeof_uint8)
+
+# Text to display in the HUD (32 char max per string).
+their_item_name_offset = offsets.define(sizeof_uint8, 32)
+their_item_owner_offset = offsets.define(sizeof_uint8, 32)
+my_item_name_offset = offsets.define(sizeof_uint8, 32)
+my_item_finder_offset = offsets.define(sizeof_uint8, 32)
+
 # The End.
 end_marker_offset = offsets.define(sizeof_uint8, 4)
 
@@ -244,19 +257,10 @@ class JakAndDaxterMemoryReader:
 
             for k in range(0, next_special_index):
                 next_special = self.read_goal_address(specials_checked_offset + (k * sizeof_uint32), sizeof_uint32)
-
-                # 112 is the game-task ID of `finalboss-movies`, which is written to this array when you grab
-                # the white eco. This is our victory condition, so we need to catch it and act on it.
-                if next_special == 112 and not self.finished_game:
-                    self.finished_game = True
-                    logger.info("Congratulations! You finished the game!")
-                else:
-
-                    # All other special checks handled as normal.
-                    special_ap_id = Specials.to_ap_id(next_special)
-                    if special_ap_id not in self.location_outbox:
-                        self.location_outbox.append(special_ap_id)
-                        logger.debug("Checked special: " + str(next_special))
+                special_ap_id = Specials.to_ap_id(next_special)
+                if special_ap_id not in self.location_outbox:
+                    self.location_outbox.append(special_ap_id)
+                    logger.debug("Checked special: " + str(next_special))
 
             died = self.read_goal_address(died_offset, sizeof_uint8)
             if died > 0:
@@ -301,6 +305,11 @@ class JakAndDaxterMemoryReader:
                         logger.debug("Checked orb bundle: " + str(bundle_ap_id))
 
                 # self.reset_orbsanity = True
+
+            completed = self.read_goal_address(completed_offset, sizeof_uint8)
+            if completed > 0 and not self.finished_game:
+                self.finished_game = True
+                logger.info("Congratulations! You finished the game!")
 
         except (ProcessError, MemoryReadError, WinAPIError):
             logger.error("The gk process has died. Restart the game and run \"/memr connect\" again.")

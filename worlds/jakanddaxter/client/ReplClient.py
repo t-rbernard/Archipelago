@@ -330,6 +330,30 @@ class JakAndDaxterReplClient:
             logger.error(f"Unable to reset orb count for collected orbsanity bundle!")
         return ok
 
+    def setup_goals(self,
+                    fire_canyon_count: int,
+                    mountain_pass_count: int,
+                    lava_tube_count: int,
+                    completion_id: int) -> bool:
+        ok = self.send_form(f"(ap-setup-goals! "
+                            f"(the float {fire_canyon_count}) "
+                            f"(the float {mountain_pass_count})"
+                            f"(the float {lava_tube_count})"
+                            f"(the uint {completion_id})"
+                            f")")
+        if ok:
+            logger.debug(f"Set up goals: FC {fire_canyon_count}, "
+                         f"MP {mountain_pass_count}, "
+                         f"LT {lava_tube_count}, "
+                         f"GOAL {completion_id}!")
+        else:
+            logger.error(f"Unable to set up goals: FC {fire_canyon_count}, "
+                         f"MP {mountain_pass_count}, "
+                         f"LT {lava_tube_count}, "
+                         f"GOAL {completion_id}!")
+        return ok
+
+
     def save_data(self):
         with open("jakanddaxter_item_inbox.json", "w+") as f:
             dump = {

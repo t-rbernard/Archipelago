@@ -10,6 +10,7 @@ from pymem.exception import ProcessNotFound, ProcessError
 import Utils
 from NetUtils import ClientStatus
 from CommonClient import ClientCommandProcessor, CommonContext, logger, server_loop, gui_enabled
+from .JakAndDaxterOptions import EnableOrbsanity
 
 from .GameID import jak1_name
 from .client.ReplClient import JakAndDaxterReplClient
@@ -110,9 +111,14 @@ class JakAndDaxterContext(CommonContext):
 
         if cmd == "Connected":
             slot_data = args["slot_data"]
-            if slot_data["enable_orbsanity"] == 1:
+            self.repl.setup_goals(slot_data["fire_canyon_cell_count"],
+                                  slot_data["mountain_pass_cell_count"],
+                                  slot_data["lava_tube_cell_count"],
+                                  slot_data["completion_condition"])
+
+            if slot_data["enable_orbsanity"] == EnableOrbsanity.option_per_level:
                 self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["level_orbsanity_bundle_size"])
-            elif slot_data["enable_orbsanity"] == 2:
+            elif slot_data["enable_orbsanity"] == EnableOrbsanity.option_global:
                 self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["global_orbsanity_bundle_size"])
             else:
                 self.repl.setup_orbsanity(slot_data["enable_orbsanity"], 1)
