@@ -8,7 +8,7 @@ import pymem
 from pymem.exception import ProcessNotFound, ProcessError
 
 import Utils
-from NetUtils import ClientStatus
+from NetUtils import ClientStatus, NetworkItem
 from CommonClient import ClientCommandProcessor, CommonContext, logger, server_loop, gui_enabled
 from .JakAndDaxterOptions import EnableOrbsanity
 
@@ -129,6 +129,37 @@ class JakAndDaxterContext(CommonContext):
                 self.repl.item_inbox[index] = item
             self.memr.save_data()
             self.repl.save_data()
+
+    def on_print_json(self, args: dict) -> None:
+        relevant = args.get("type", None) in {"ItemSend"}
+        if relevant:
+            item = args["item"]
+            recipient = args["receiving"]
+
+            # Receiving an item from the server.
+            if self.slot_concerns_self(recipient):
+                self.repl.my_item_name = self.item_names.lookup_in_game(item.item)
+
+                # Did we find it, or did someone else?
+                if self.slot_concerns_self(item.player):
+                    self.repl.my_item_finder = "MYSELF"
+                else:
+                    self.repl.my_item_finder = self.player_names[item.player]
+
+            # Sending an item to the server.
+            if self.slot_concerns_self(item.player):
+                self.repl.their_item_name = self.item_names.lookup_in_slot(item.item, recipient)
+
+                # Does it belong to us, or to someone else?
+                if self.slot_concerns_self(recipient):
+                    self.repl.their_item_owner = "MYSELF"
+                else:
+                    self.repl.their_item_owner = self.player_names[recipient]
+
+            # Write to game display.
+            self.repl.write_game_text()
+
+        super(JakAndDaxterContext, self).on_print_json(args)
 
     def on_deathlink(self, data: dict):
         if self.memr.deathlink_enabled:

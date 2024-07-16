@@ -36,6 +36,11 @@ class JakAndDaxterReplClient:
     item_inbox: typing.Dict[int, NetworkItem] = {}
     inbox_index = 0
 
+    my_item_name: str = None
+    my_item_finder: str = None
+    their_item_name: str = None
+    their_item_owner: str = None
+
     def __init__(self, ip: str = "127.0.0.1", port: int = 8181):
         self.ip = ip
         self.port = port
@@ -189,6 +194,35 @@ class JakAndDaxterReplClient:
         logger.info("  Last item received: " + (str(getattr(self.item_inbox[self.inbox_index], "item"))
                                                 if self.inbox_index else "None"))
 
+    # To properly display in-game text, it must be alphanumeric and uppercase.
+    # I also only allotted 32 bytes to each string in OpenGOAL, so we must truncate.
+    @staticmethod
+    def sanitize_game_text(text: str) -> str:
+        if text is None:
+            return "\"NONE\""
+
+        result = "".join(c for c in text if (c in {"-", " "} or c.isalnum()))
+        result = result[:32].upper()
+        return f"\"{result}\""
+
+    # GOAL can handle both it's own string datatype as well C-like character pointers (charp).
+    # So for the game to constantly display this information in the HUD, we have to write it
+    # to a memory address as a char*.
+    def write_game_text(self):
+        logger.debug(f"Sending info to in-game display!")
+        self.send_form(f"(charp<-string (-> *ap-info-jak1* my-item-name) "
+                       f"{self.sanitize_game_text(self.my_item_name)})",
+                       print_ok=False)
+        self.send_form(f"(charp<-string (-> *ap-info-jak1* my-item-finder) "
+                       f"{self.sanitize_game_text(self.my_item_finder)})",
+                       print_ok=False)
+        self.send_form(f"(charp<-string (-> *ap-info-jak1* their-item-name) "
+                       f"{self.sanitize_game_text(self.their_item_name)})",
+                       print_ok=False)
+        self.send_form(f"(charp<-string (-> *ap-info-jak1* their-item-owner) "
+                       f"{self.sanitize_game_text(self.their_item_owner)})",
+                       print_ok=False)
+
     def receive_item(self):
         ap_id = getattr(self.item_inbox[self.inbox_index], "item")
 
@@ -330,27 +364,14 @@ class JakAndDaxterReplClient:
             logger.error(f"Unable to reset orb count for collected orbsanity bundle!")
         return ok
 
-    def setup_goals(self,
-                    fire_canyon_count: int,
-                    mountain_pass_count: int,
-                    lava_tube_count: int,
-                    completion_id: int) -> bool:
+    def setup_goals(self, fc_count: int, mp_count: int, lt_count: int, goal_id: int) -> bool:
         ok = self.send_form(f"(ap-setup-goals! "
-                            f"(the float {fire_canyon_count}) "
-                            f"(the float {mountain_pass_count})"
-                            f"(the float {lava_tube_count})"
-                            f"(the uint {completion_id})"
-                            f")")
+                            f"(the float {fc_count}) (the float {mp_count}) "
+                            f"(the float {lt_count}) (the uint {goal_id}))")
         if ok:
-            logger.debug(f"Set up goals: FC {fire_canyon_count}, "
-                         f"MP {mountain_pass_count}, "
-                         f"LT {lava_tube_count}, "
-                         f"GOAL {completion_id}!")
+            logger.debug(f"Set up goals: FC {fc_count}, MP {mp_count}, LT {lt_count}, GOAL {goal_id}!")
         else:
-            logger.error(f"Unable to set up goals: FC {fire_canyon_count}, "
-                         f"MP {mountain_pass_count}, "
-                         f"LT {lava_tube_count}, "
-                         f"GOAL {completion_id}!")
+            logger.error(f"Unable to set up goals: FC {fc_count}, MP {mp_count}, LT {lt_count}, GOAL {goal_id}!")
         return ok
 
 

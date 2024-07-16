@@ -17,6 +17,7 @@ from ..locs import (OrbLocations as Orbs,
 sizeof_uint64 = 8
 sizeof_uint32 = 4
 sizeof_uint8 = 1
+sizeof_float = 4
 
 
 # IMPORTANT: OpenGOAL memory structures are particular about the alignment, in memory, of member elements according to
@@ -73,10 +74,10 @@ collected_bundle_level_offset = offsets.define(sizeof_uint8)
 collected_bundle_count_offset = offsets.define(sizeof_uint32)
 
 # Progression and Completion information.
-fire_canyon_cell_count_offset = offsets.define(sizeof_uint8)
-mountain_pass_cell_count_offset = offsets.define(sizeof_uint8)
-lava_tube_cell_count_offset = offsets.define(sizeof_uint8)
-completion_condition_offset = offsets.define(sizeof_uint8)
+fire_canyon_unlock_offset = offsets.define(sizeof_float)
+mountain_pass_unlock_offset = offsets.define(sizeof_float)
+lava_tube_unlock_offset = offsets.define(sizeof_float)
+completion_goal_offset = offsets.define(sizeof_uint8)
 completed_offset = offsets.define(sizeof_uint8)
 
 # Text to display in the HUD (32 char max per string).
@@ -232,7 +233,7 @@ class JakAndDaxterMemoryReader:
         logger.info("Memory Reader Status:")
         logger.info("   Game process ID: " + (str(self.gk_process.process_id) if self.gk_process else "None"))
         logger.info("   Game state memory address: " + str(self.goal_address))
-        logger.info("   Last location checked: " + (str(self.location_outbox[self.outbox_index])
+        logger.info("   Last location checked: " + (str(self.location_outbox[self.outbox_index - 1])
                                                     if self.outbox_index else "None"))
 
     def read_memory(self) -> List[int]:
