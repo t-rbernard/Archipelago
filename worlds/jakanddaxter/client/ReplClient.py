@@ -68,6 +68,7 @@ class JakAndDaxterReplClient:
         # Receive Items from AP. Handle 1 item per tick.
         if len(self.item_inbox) > self.inbox_index:
             self.receive_item()
+            self.save_data()
             self.inbox_index += 1
 
         if self.received_deathlink:
@@ -373,7 +374,6 @@ class JakAndDaxterReplClient:
         else:
             logger.error(f"Unable to set up goals: FC {fc_count}, MP {mp_count}, LT {lt_count}, GOAL {goal_id}!")
         return ok
-
 
     def save_data(self):
         with open("jakanddaxter_item_inbox.json", "w+") as f:

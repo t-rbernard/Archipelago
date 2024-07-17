@@ -93,7 +93,7 @@ class JakAndDaxterWorld(World):
     # This will also set Locations, Location access rules, Region access rules, etc.
     def create_regions(self) -> None:
         create_regions(self.multiworld, self.options, self.player)
-        # visualize_regions(self.multiworld.get_region("Menu", self.player), "jak.puml")
+        visualize_regions(self.multiworld.get_region("Menu", self.player), "jakanddaxter.puml")
 
     # Helper function to get the correct orb bundle size.
     def get_orb_bundle_size(self) -> int:

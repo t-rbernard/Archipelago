@@ -85,8 +85,8 @@ class JakAndDaxterContext(CommonContext):
     def __init__(self, server_address: typing.Optional[str], password: typing.Optional[str]) -> None:
         self.repl = JakAndDaxterReplClient()
         self.memr = JakAndDaxterMemoryReader()
-        # self.memr.load_data()
         # self.repl.load_data()
+        # self.memr.load_data()
         super().__init__(server_address, password)
 
     def run_gui(self):
@@ -116,23 +116,21 @@ class JakAndDaxterContext(CommonContext):
                                   slot_data["lava_tube_cell_count"],
                                   slot_data["completion_condition"])
 
-            if slot_data["enable_orbsanity"] == EnableOrbsanity.option_per_level:
-                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["level_orbsanity_bundle_size"])
-            elif slot_data["enable_orbsanity"] == EnableOrbsanity.option_global:
-                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], slot_data["global_orbsanity_bundle_size"])
+            orbsanity_option = slot_data["enable_orbsanity"]
+            if orbsanity_option == EnableOrbsanity.option_per_level:
+                self.repl.setup_orbsanity(orbsanity_option, slot_data["level_orbsanity_bundle_size"])
+            elif orbsanity_option == EnableOrbsanity.option_global:
+                self.repl.setup_orbsanity(orbsanity_option, slot_data["global_orbsanity_bundle_size"])
             else:
-                self.repl.setup_orbsanity(slot_data["enable_orbsanity"], 1)
+                self.repl.setup_orbsanity(orbsanity_option, 1)
 
         if cmd == "ReceivedItems":
             for index, item in enumerate(args["items"], start=args["index"]):
                 logger.debug(f"index: {str(index)}, item: {str(item)}")
                 self.repl.item_inbox[index] = item
-            self.memr.save_data()
-            self.repl.save_data()
 
     def on_print_json(self, args: dict) -> None:
-        relevant = args.get("type", None) in {"ItemSend"}
-        if relevant:
+        if "type" in args and args["type"] in {"ItemSend"}:
             item = args["item"]
             recipient = args["receiving"]
 

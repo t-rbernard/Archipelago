@@ -185,6 +185,7 @@ class JakAndDaxterMemoryReader:
         # Checked Locations in game. Handle the entire outbox every tick until we're up to speed.
         if len(self.location_outbox) > self.outbox_index:
             location_callback(self.location_outbox)
+            self.save_data()
             self.outbox_index += 1
 
         if self.finished_game:
