@@ -152,6 +152,7 @@ class JakAndDaxterMemoryReader:
     # Orbsanity handling
     orbsanity_enabled: bool = False
     reset_orbsanity: bool = False
+    orbs_paid: int = 0
 
     def __init__(self, marker: ByteString = b'UnLiStEdStRaTs_JaK1\x00'):
         self.marker = marker
@@ -162,7 +163,8 @@ class JakAndDaxterMemoryReader:
                         finish_callback: Callable,
                         deathlink_callback: Callable,
                         deathlink_toggle: Callable,
-                        orbsanity_callback: Callable):
+                        orbsanity_callback: Callable,
+                        paid_orbs_callback: Callable):
         if self.initiated_connect:
             await self.connect()
             self.initiated_connect = False
@@ -200,6 +202,10 @@ class JakAndDaxterMemoryReader:
 
         if self.reset_orbsanity:
             orbsanity_callback()
+
+        if self.orbs_paid > 0:
+            paid_orbs_callback(self.orbs_paid)
+            self.orbs_paid = 0
 
     async def connect(self):
         try:
@@ -249,6 +255,16 @@ class JakAndDaxterMemoryReader:
                 if cell_ap_id not in self.location_outbox:
                     self.location_outbox.append(cell_ap_id)
                     logger.debug("Checked power cell: " + str(next_cell))
+
+                    # If orbsanity is ON and next_cell is one of the traders or oracles, then run a callback
+                    # to add their amount to the DataStorage value holding our current orb trade total.
+                    if next_cell in {11, 12, 31, 32, 33, 96, 97, 98, 99}:
+                        self.orbs_paid += 90
+                        logger.debug("Traded 90 orbs!")
+
+                    if next_cell in {13, 14, 34, 35, 100, 101}:
+                        self.orbs_paid += 120
+                        logger.debug("Traded 120 orbs!")
 
             for k in range(0, next_buzzer_index):
                 next_buzzer = self.read_goal_address(buzzers_checked_offset + (k * sizeof_uint32), sizeof_uint32)

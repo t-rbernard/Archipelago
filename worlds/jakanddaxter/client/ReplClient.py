@@ -1,7 +1,7 @@
 import json
 import time
 import struct
-import typing
+from typing import Dict, Callable
 import random
 from socket import socket, AF_INET, SOCK_STREAM
 
@@ -33,7 +33,7 @@ class JakAndDaxterReplClient:
     gk_process: pymem.process = None
     goalc_process: pymem.process = None
 
-    item_inbox: typing.Dict[int, NetworkItem] = {}
+    item_inbox: Dict[int, NetworkItem] = {}
     inbox_index = 0
 
     my_item_name: str = None
@@ -206,7 +206,7 @@ class JakAndDaxterReplClient:
         result = result[:32].upper()
         return f"\"{result}\""
 
-    # GOAL can handle both it's own string datatype as well C-like character pointers (charp).
+    # OpenGOAL can handle both its own string datatype and C-like character pointers (charp).
     # So for the game to constantly display this information in the HUD, we have to write it
     # to a memory address as a char*.
     def write_game_text(self):
@@ -343,12 +343,12 @@ class JakAndDaxterReplClient:
             logger.error(f"Unable to reset deathlink flag!")
         return ok
 
-    def setup_orbsanity(self, option: int, bundle: int) -> bool:
-        ok = self.send_form(f"(ap-setup-orbs! (the uint {option}) (the uint {bundle}))")
+    def subtract_traded_orbs(self, orb_count: int) -> bool:
+        ok = self.send_form(f"(-! (-> *game-info* money) (the float {orb_count}))")
         if ok:
-            logger.debug(f"Set up orbsanity: Option {option}, Bundle {bundle}!")
+            logger.debug(f"Subtracting {orb_count} traded orbs!")
         else:
-            logger.error(f"Unable to set up orbsanity: Option {option}, Bundle {bundle}!")
+            logger.error(f"Unable to subtract {orb_count} traded orbs!")
         return ok
 
     def reset_orbsanity(self) -> bool:
@@ -365,14 +365,22 @@ class JakAndDaxterReplClient:
             logger.error(f"Unable to reset orb count for collected orbsanity bundle!")
         return ok
 
-    def setup_goals(self, fc_count: int, mp_count: int, lt_count: int, goal_id: int) -> bool:
-        ok = self.send_form(f"(ap-setup-goals! "
+    def setup_options(self,
+                      os_option: int, os_bundle: int,
+                      fc_count: int, mp_count: int,
+                      lt_count: int, goal_id: int) -> bool:
+        ok = self.send_form(f"(ap-setup-options! "
+                            f"(the uint {os_option}) (the uint {os_bundle}) "
                             f"(the float {fc_count}) (the float {mp_count}) "
                             f"(the float {lt_count}) (the uint {goal_id}))")
+        message = (f"Setting options: \n"
+                   f"    Orbsanity Option {os_option}, Orbsanity Bundle {os_bundle}, \n"
+                   f"    FC Cell Count {fc_count}, MP Cell Count {mp_count}, \n"
+                   f"    LT Cell Count {lt_count}, Completion GOAL {goal_id}... ")
         if ok:
-            logger.debug(f"Set up goals: FC {fc_count}, MP {mp_count}, LT {lt_count}, GOAL {goal_id}!")
+            logger.debug(message + "Success!")
         else:
-            logger.error(f"Unable to set up goals: FC {fc_count}, MP {mp_count}, LT {lt_count}, GOAL {goal_id}!")
+            logger.error(message + "Failed!")
         return ok
 
     def save_data(self):
