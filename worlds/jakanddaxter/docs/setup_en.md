@@ -121,3 +121,4 @@ Input file iso_data/jak1/MUS/TWEAKVAL.MUS does not exist.
 - The game needs to run in debug mode in order to allow the repl to connect to it. We hide the debug text on screen and play the game's introductory cutscenes properly.
 - The powershell windows cannot be run as background processes due to how the repl works, so the best we can do is minimize them.
 - The client is currently not very robust and doesn't handle failures gracefully. This may result in items not being delivered to the game, or location checks not being delivered to the server.
+- Orbsanity checks may show up out of order in the text client.

@@ -117,6 +117,7 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
     multiworld.regions.append(bunny_room)
     multiworld.regions.append(rotating_tower)
     multiworld.regions.append(final_boss)
+    multiworld.regions.append(final_door)
 
     # If Per-Level Orbsanity is enabled, build the special Orbsanity Region. This is a virtual region always
     # accessible to Main Area. The Locations within are automatically checked when you collect enough orbs.

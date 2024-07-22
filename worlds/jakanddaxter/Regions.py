@@ -1,9 +1,14 @@
-from BaseClasses import MultiWorld
-from .JakAndDaxterOptions import JakAndDaxterOptions, EnableOrbsanity, CompletionCondition
-from .Items import item_table
+from BaseClasses import MultiWorld, CollectionState, ItemClassification
+from Options import OptionError
+from .JakAndDaxterOptions import (JakAndDaxterOptions,
+                                  EnableMoveRandomizer,
+                                  EnableOrbsanity,
+                                  CompletionCondition)
+from .Items import (JakAndDaxterItem,
+                    item_table,
+                    move_item_table)
 from .Rules import can_reach_orbs
-from .locs import (OrbLocations as Orbs,
-                   CellLocations as Cells,
+from .locs import (CellLocations as Cells,
                    ScoutLocations as Scouts)
 from .regs.RegionBase import JakAndDaxterRegion
 from .regs import (GeyserRockRegions as GeyserRock,
@@ -102,7 +107,7 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     vc.connect(lt, rule=lambda state: state.has("Power Cell", player, lt_count))  # Normally 72.
     lt.connect(gmc)  # gmc->fb connection defined internally by GolAndMaiasCitadelRegions.
 
-    # Finally, set the completion condition.
+    # Set the completion condition.
     if options.completion_condition == CompletionCondition.option_cross_fire_canyon:
         multiworld.completion_condition[player] = lambda state: state.can_reach(rv, "Region", player)
 
@@ -123,3 +128,57 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
 
     elif options.completion_condition == CompletionCondition.option_open_100_cell_door:
         multiworld.completion_condition[player] = lambda state: state.can_reach(fd, "Region", player)
+
+    # As a final sanity check on these options, verify that we have enough locations to allow us to cross
+    # the connector levels. E.g. if you set Fire Canyon count to 99, we may not have 99 Locations in hub 1.
+    verify_connector_level_accessibility(multiworld, options, player)
+
+
+def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
+
+    # Set up a state where we only have the items we need to progress, exactly when we need them, as well as
+    # any items we would have/get from our other options. The only variable we're actually testing here is the
+    # number of power cells we need.
+    state = CollectionState(multiworld)
+    if options.enable_move_randomizer == EnableMoveRandomizer.option_false:
+        for move in move_item_table:
+            state.collect(JakAndDaxterItem(move_item_table[move], ItemClassification.progression, move, player))
+
+    thresholds = {
+        0: {
+            "option": options.fire_canyon_cell_count,
+            "required_items": {},
+        },
+        1: {
+            "option": options.mountain_pass_cell_count,
+            "required_items": {
+                33: "Warrior's Pontoons",
+                10945: "Double Jump",
+            },
+        },
+        2: {
+            "option": options.lava_tube_cell_count,
+            "required_items": {},
+        },
+    }
+
+    loc = 0
+    for k in thresholds:
+        option = thresholds[k]["option"]
+        required_items = thresholds[k]["required_items"]
+
+        # Given our current state (starting with 0 Power Cells), determine if there are enough
+        # Locations to fill with the number of Power Cells needed for the next threshold.
+        locations_available = multiworld.get_reachable_locations(state, player)
+        if len(locations_available) < option.value:
+            raise OptionError(f"Settings conflict with {option.display_name}: "
+                              f"not enough potential locations ({len(locations_available)}) "
+                              f"for the required number of power cells ({option.value}).")
+
+        # Once we've determined we can pass the current threshold, add what we need to reach the next one.
+        for _ in range(option.value):
+            state.collect(JakAndDaxterItem("Power Cell", ItemClassification.progression, loc, player))
+            loc += 1
+
+        for item in required_items:
+            state.collect(JakAndDaxterItem(required_items[item], ItemClassification.progression, item, player))
