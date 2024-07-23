@@ -57,7 +57,12 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
     capsule_room = JakAndDaxterRegion("Capsule Chamber", player, multiworld, level_name, 6)
 
     # Use jump dive to activate button inside the capsule. Blue eco vent can ready the chamber and get the scout fly.
-    capsule_room.add_cell_locations([47], access_rule=lambda state: state.has("Jump Dive", player))
+    capsule_room.add_cell_locations([47], access_rule=lambda state:
+                                    state.has("Jump Dive", player)
+                                    and (state.has("Double Jump", player)
+                                         or state.has("Jump Kick", player)
+                                         or (state.has("Punch", player)
+                                             and state.has("Punch Uppercut", player))))
     capsule_room.add_fly_locations([327729])
 
     second_slide = JakAndDaxterRegion("Second Slide", player, multiworld, level_name, 31)
