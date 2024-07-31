@@ -91,9 +91,9 @@ class LavaTubeCellCount(Range):
     default = 72
 
 
-class CompletionGoal(Choice):
+class CompletionCondition(Choice):
     """Set the goal for completing the game."""
-    display_name = "Completion Goal"
+    display_name = "Completion Condition"
     option_cross_fire_canyon = 69
     option_cross_mountain_pass = 87
     option_cross_lava_tube = 89
@@ -115,4 +115,3 @@ class JakAndDaxterOptions(PerGameCommonOptions):
     lava_tube_cell_count: LavaTubeCellCount
     jak_completion_condition: CompletionCondition
     start_inventory_from_pool: StartInventoryPool
-

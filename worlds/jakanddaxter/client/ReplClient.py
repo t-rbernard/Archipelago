@@ -153,9 +153,9 @@ class JakAndDaxterReplClient:
             # Play this audio cue when compilation is complete.
             # It's the sound you hear when you press START + START to close the Options menu.
             if await self.send_form("(dotimes (i 1) "
-                              "(sound-play-by-name "
-                              "(static-sound-name \"menu-close\") "
-                              "(new-sound-id) 1024 0 0 (sound-group sfx) #t))", print_ok=False):
+                                    "(sound-play-by-name "
+                                    "(static-sound-name \"menu-close\") "
+                                    "(new-sound-id) 1024 0 0 (sound-group sfx) #t))", print_ok=False):
                 ok_count += 1
 
             # Disable cheat-mode and debug (close the visual cues).
