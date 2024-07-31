@@ -125,28 +125,28 @@ class JakAndDaxterContext(CommonContext):
             else:
                 goal_id = slot_data["jak_completion_condition"]
 
-            self.repl.setup_options(orbsanity_option,
-                                    orbsanity_bundle,
-                                    slot_data["fire_canyon_cell_count"],
-                                    slot_data["mountain_pass_cell_count"],
-                                    slot_data["lava_tube_cell_count"],
-                                    goal_id)
+            create_task_log_exception(
+                self.repl.setup_options(orbsanity_option,
+                                        orbsanity_bundle,
+                                        slot_data["fire_canyon_cell_count"],
+                                        slot_data["mountain_pass_cell_count"],
+                                        slot_data["lava_tube_cell_count"],
+                                        goal_id))
 
             # Because Orbsanity and the orb traders in the game are intrinsically linked, we need the server
             # to track our trades at all times to support async play. "Retrieved" will tell us the orbs we lost,
             # while "ReceivedItems" will tell us the orbs we gained. This will give us the correct balance.
             if orbsanity_option in [EnableOrbsanity.option_per_level, EnableOrbsanity.option_global]:
                 async def get_orb_balance():
-                    await self.send_msgs([{"cmd": "Get",
-                                           "keys": [f"jakanddaxter_{self.auth}_orbs_paid"]
-                                           }])
+                    await self.send_msgs([{"cmd": "Get", "keys": [f"jakanddaxter_{self.auth}_orbs_paid"]}])
 
                 create_task_log_exception(get_orb_balance())
 
         if cmd == "Retrieved":
             if f"jakanddaxter_{self.auth}_orbs_paid" in args["keys"]:
                 orbs_traded = args["keys"][f"jakanddaxter_{self.auth}_orbs_paid"]
-                self.repl.subtract_traded_orbs(orbs_traded if orbs_traded is not None else 0)
+                orbs_traded = orbs_traded if orbs_traded is not None else 0
+                create_task_log_exception(self.repl.subtract_traded_orbs(orbs_traded))
 
         if cmd == "ReceivedItems":
             for index, item in enumerate(args["items"], start=args["index"]):
@@ -179,7 +179,7 @@ class JakAndDaxterContext(CommonContext):
                     self.repl.their_item_owner = self.player_names[recipient]
 
             # Write to game display.
-            self.repl.write_game_text()
+            create_task_log_exception(self.repl.write_game_text())
 
         super(JakAndDaxterContext, self).on_print_json(args)
 
@@ -214,7 +214,7 @@ class JakAndDaxterContext(CommonContext):
         # Reset all flags.
         self.memr.send_deathlink = False
         self.memr.cause_of_death = ""
-        self.repl.reset_deathlink()
+        await self.repl.reset_deathlink()
 
     def on_deathlink_check(self):
         create_task_log_exception(self.ap_inform_deathlink())
@@ -228,7 +228,7 @@ class JakAndDaxterContext(CommonContext):
     async def repl_reset_orbsanity(self):
         if self.memr.orbsanity_enabled:
             self.memr.reset_orbsanity = False
-            self.repl.reset_orbsanity()
+            await self.repl.reset_orbsanity()
 
     def on_orbsanity_check(self):
         create_task_log_exception(self.repl_reset_orbsanity())

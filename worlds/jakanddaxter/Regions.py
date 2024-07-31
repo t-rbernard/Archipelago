@@ -3,7 +3,7 @@ from Options import OptionError
 from .JakAndDaxterOptions import (JakAndDaxterOptions,
                                   EnableMoveRandomizer,
                                   EnableOrbsanity,
-                                  CompletionCondition)
+                                  CompletionGoal)
 from .Items import (JakAndDaxterItem,
                     item_table,
                     move_item_table)
