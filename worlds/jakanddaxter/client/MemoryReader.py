@@ -150,7 +150,6 @@ class JakAndDaxterMemoryReader:
 
     # Orbsanity handling
     orbsanity_enabled: bool = False
-    reset_orbsanity: bool = False
     orbs_paid: int = 0
 
     def __init__(self, marker: ByteString = b'UnLiStEdStRaTs_JaK1\x00'):
@@ -162,7 +161,6 @@ class JakAndDaxterMemoryReader:
                         finish_callback: Callable,
                         deathlink_callback: Callable,
                         deathlink_toggle: Callable,
-                        orbsanity_callback: Callable,
                         paid_orbs_callback: Callable):
         if self.initiated_connect:
             await self.connect()
@@ -198,9 +196,6 @@ class JakAndDaxterMemoryReader:
 
         if self.send_deathlink:
             deathlink_callback()
-
-        if self.reset_orbsanity:
-            orbsanity_callback()
 
         if self.orbs_paid > 0:
             paid_orbs_callback(self.orbs_paid)

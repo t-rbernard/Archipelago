@@ -39,10 +39,9 @@ def create_task_log_exception(awaitable: typing.Awaitable) -> asyncio.Task:
 class JakAndDaxterClientCommandProcessor(ClientCommandProcessor):
     ctx: "JakAndDaxterContext"
 
-    # The command processor is not async and cannot use async tasks, so long-running operations
-    # like the /repl connect command (which takes 10-15 seconds to compile the game) have to be requested
-    # with user-initiated flags. The text client will hang while the operation runs, but at least we can
-    # inform the user to wait. The flags are checked by the agents every main_tick.
+    # The command processor is not async so long-running operations like the /repl connect command
+    # (which takes 10-15 seconds to compile the game) have to be requested with user-initiated flags.
+    # The flags are checked by the agents every main_tick.
     def _cmd_repl(self, *arguments: str):
         """Sends a command to the OpenGOAL REPL. Arguments:
         - connect : connect the client to the REPL (goalc).
@@ -52,7 +51,7 @@ class JakAndDaxterClientCommandProcessor(ClientCommandProcessor):
                 logger.info("This may take a bit... Wait for the success audio cue before continuing!")
                 self.ctx.repl.initiated_connect = True
             if arguments[0] == "status":
-                self.ctx.repl.print_status()
+                create_task_log_exception(self.ctx.repl.print_status())
 
     def _cmd_memr(self, *arguments: str):
         """Sends a command to the Memory Reader. Arguments:
@@ -119,7 +118,7 @@ class JakAndDaxterContext(CommonContext):
             else:
                 orbsanity_bundle = 1
 
-            # Keep compatibility with 0.0.8 at least for now
+            # Keep compatibility with 0.0.8 at least for now - TODO: Remove this.
             if "completion_condition" in slot_data:
                 goal_id = slot_data["completion_condition"]
             else:
@@ -154,33 +153,39 @@ class JakAndDaxterContext(CommonContext):
                 self.repl.item_inbox[index] = item
 
     def on_print_json(self, args: dict) -> None:
-        if "type" in args and args["type"] in {"ItemSend"}:
-            item = args["item"]
-            recipient = args["receiving"]
 
-            # Receiving an item from the server.
-            if self.slot_concerns_self(recipient):
-                self.repl.my_item_name = self.item_names.lookup_in_game(item.item)
+        # Even though N items come in as 1 ReceivedItems packet, there are still N PrintJson packets to process,
+        # and they all arrive before the ReceivedItems packet does. Defer processing of these packets as
+        # async tasks to speed up large releases of items.
+        async def write_game_text():
+            if "type" in args and args["type"] in {"ItemSend"}:
+                item = args["item"]
+                recipient = args["receiving"]
 
-                # Did we find it, or did someone else?
-                if self.slot_concerns_self(item.player):
-                    self.repl.my_item_finder = "MYSELF"
-                else:
-                    self.repl.my_item_finder = self.player_names[item.player]
-
-            # Sending an item to the server.
-            if self.slot_concerns_self(item.player):
-                self.repl.their_item_name = self.item_names.lookup_in_slot(item.item, recipient)
-
-                # Does it belong to us, or to someone else?
+                # Receiving an item from the server.
                 if self.slot_concerns_self(recipient):
-                    self.repl.their_item_owner = "MYSELF"
-                else:
-                    self.repl.their_item_owner = self.player_names[recipient]
+                    self.repl.my_item_name = self.item_names.lookup_in_game(item.item)
 
-            # Write to game display.
-            create_task_log_exception(self.repl.write_game_text())
+                    # Did we find it, or did someone else?
+                    if self.slot_concerns_self(item.player):
+                        self.repl.my_item_finder = "MYSELF"
+                    else:
+                        self.repl.my_item_finder = self.player_names[item.player]
 
+                # Sending an item to the server.
+                if self.slot_concerns_self(item.player):
+                    self.repl.their_item_name = self.item_names.lookup_in_slot(item.item, recipient)
+
+                    # Does it belong to us, or to someone else?
+                    if self.slot_concerns_self(recipient):
+                        self.repl.their_item_owner = "MYSELF"
+                    else:
+                        self.repl.their_item_owner = self.player_names[recipient]
+
+                # Write to game display.
+                await self.repl.write_game_text()
+
+        create_task_log_exception(write_game_text())
         super(JakAndDaxterContext, self).on_print_json(args)
 
     def on_deathlink(self, data: dict):
@@ -225,14 +230,6 @@ class JakAndDaxterContext(CommonContext):
     def on_deathlink_toggle(self):
         create_task_log_exception(self.ap_inform_deathlink_toggle())
 
-    async def repl_reset_orbsanity(self):
-        if self.memr.orbsanity_enabled:
-            self.memr.reset_orbsanity = False
-            await self.repl.reset_orbsanity()
-
-    def on_orbsanity_check(self):
-        create_task_log_exception(self.repl_reset_orbsanity())
-
     async def ap_inform_orb_trade(self, orbs_changed: int):
         if self.memr.orbsanity_enabled:
             await self.send_msgs([{"cmd": "Set",
@@ -256,7 +253,6 @@ class JakAndDaxterContext(CommonContext):
                                       self.on_finish_check,
                                       self.on_deathlink_check,
                                       self.on_deathlink_toggle,
-                                      self.on_orbsanity_check,
                                       self.on_orb_trade)
             await asyncio.sleep(0.1)
 

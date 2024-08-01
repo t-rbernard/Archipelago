@@ -184,14 +184,14 @@ class JakAndDaxterReplClient:
         logger.info("  Game process ID: " + (str(self.gk_process.process_id) if self.gk_process else "None"))
         try:
             if self.reader and self.writer:
-                addr = self.writer.get_extra_info('peername')
+                addr = self.writer.get_extra_info("peername")
                 logger.info("  Game websocket: " + (str(addr) if addr else "None"))
                 await self.send_form("(dotimes (i 1) "
                                      "(sound-play-by-name "
                                      "(static-sound-name \"menu-close\") "
                                      "(new-sound-id) 1024 0 0 (sound-group sfx) #t))", print_ok=False)
-        except:
-            logger.warn("  Game websocket not found!")
+        except ConnectionResetError:
+            logger.warn("  Connection to the game was lost or reset!")
         logger.info("  Did you hear the success audio cue?")
         logger.info("  Last item received: " + (str(getattr(self.item_inbox[self.inbox_index], "item"))
                                                 if self.inbox_index else "None"))
@@ -212,18 +212,16 @@ class JakAndDaxterReplClient:
     # to a memory address as a char*.
     async def write_game_text(self):
         logger.debug(f"Sending info to in-game display!")
-        await self.send_form(f"(charp<-string (-> *ap-info-jak1* my-item-name) "
-                             f"{self.sanitize_game_text(self.my_item_name)})",
-                             print_ok=False)
-        await self.send_form(f"(charp<-string (-> *ap-info-jak1* my-item-finder) "
-                             f"{self.sanitize_game_text(self.my_item_finder)})",
-                             print_ok=False)
-        await self.send_form(f"(charp<-string (-> *ap-info-jak1* their-item-name) "
-                             f"{self.sanitize_game_text(self.their_item_name)})",
-                             print_ok=False)
-        await self.send_form(f"(charp<-string (-> *ap-info-jak1* their-item-owner) "
-                             f"{self.sanitize_game_text(self.their_item_owner)})",
-                             print_ok=False)
+        await self.send_form(f"(begin "
+                             f"  (charp<-string (-> *ap-info-jak1* my-item-name) "
+                             f"    {self.sanitize_game_text(self.my_item_name)}) "
+                             f"  (charp<-string (-> *ap-info-jak1* my-item-finder) "
+                             f"    {self.sanitize_game_text(self.my_item_finder)}) "
+                             f"  (charp<-string (-> *ap-info-jak1* their-item-name) "
+                             f"    {self.sanitize_game_text(self.their_item_name)}) "
+                             f"  (charp<-string (-> *ap-info-jak1* their-item-owner) "
+                             f"    {self.sanitize_game_text(self.their_item_owner)}) "
+                             f"  (none))", print_ok=False)
 
     async def receive_item(self):
         ap_id = getattr(self.item_inbox[self.inbox_index], "item")
@@ -354,20 +352,6 @@ class JakAndDaxterReplClient:
             else:
                 logger.error(f"Unable to subtract {orb_count} traded orbs!")
             return ok
-
-    async def reset_orbsanity(self) -> bool:
-        ok = await self.send_form(f"(set! (-> *ap-info-jak1* collected-bundle-level) 0)")
-        if ok:
-            logger.debug(f"Reset level ID for collected orbsanity bundle!")
-        else:
-            logger.error(f"Unable to reset level ID for collected orbsanity bundle!")
-
-        ok = await self.send_form(f"(set! (-> *ap-info-jak1* collected-bundle-count) 0)")
-        if ok:
-            logger.debug(f"Reset orb count for collected orbsanity bundle!")
-        else:
-            logger.error(f"Unable to reset orb count for collected orbsanity bundle!")
-        return ok
 
     async def setup_options(self,
                             os_option: int, os_bundle: int,
