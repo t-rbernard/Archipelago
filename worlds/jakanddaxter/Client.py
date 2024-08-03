@@ -152,40 +152,40 @@ class JakAndDaxterContext(CommonContext):
                 logger.debug(f"index: {str(index)}, item: {str(item)}")
                 self.repl.item_inbox[index] = item
 
+    async def json_to_game_text(self, args: dict):
+        if "type" in args and args["type"] in {"ItemSend"}:
+            item = args["item"]
+            recipient = args["receiving"]
+
+            # Receiving an item from the server.
+            if self.slot_concerns_self(recipient):
+                self.repl.my_item_name = self.item_names.lookup_in_game(item.item)
+
+                # Did we find it, or did someone else?
+                if self.slot_concerns_self(item.player):
+                    self.repl.my_item_finder = "MYSELF"
+                else:
+                    self.repl.my_item_finder = self.player_names[item.player]
+
+            # Sending an item to the server.
+            if self.slot_concerns_self(item.player):
+                self.repl.their_item_name = self.item_names.lookup_in_slot(item.item, recipient)
+
+                # Does it belong to us, or to someone else?
+                if self.slot_concerns_self(recipient):
+                    self.repl.their_item_owner = "MYSELF"
+                else:
+                    self.repl.their_item_owner = self.player_names[recipient]
+
+            # Write to game display.
+            await self.repl.write_game_text()
+
     def on_print_json(self, args: dict) -> None:
 
         # Even though N items come in as 1 ReceivedItems packet, there are still N PrintJson packets to process,
         # and they all arrive before the ReceivedItems packet does. Defer processing of these packets as
         # async tasks to speed up large releases of items.
-        async def write_game_text():
-            if "type" in args and args["type"] in {"ItemSend"}:
-                item = args["item"]
-                recipient = args["receiving"]
-
-                # Receiving an item from the server.
-                if self.slot_concerns_self(recipient):
-                    self.repl.my_item_name = self.item_names.lookup_in_game(item.item)
-
-                    # Did we find it, or did someone else?
-                    if self.slot_concerns_self(item.player):
-                        self.repl.my_item_finder = "MYSELF"
-                    else:
-                        self.repl.my_item_finder = self.player_names[item.player]
-
-                # Sending an item to the server.
-                if self.slot_concerns_self(item.player):
-                    self.repl.their_item_name = self.item_names.lookup_in_slot(item.item, recipient)
-
-                    # Does it belong to us, or to someone else?
-                    if self.slot_concerns_self(recipient):
-                        self.repl.their_item_owner = "MYSELF"
-                    else:
-                        self.repl.their_item_owner = self.player_names[recipient]
-
-                # Write to game display.
-                await self.repl.write_game_text()
-
-        create_task_log_exception(write_game_text())
+        create_task_log_exception(self.json_to_game_text(args))
         super(JakAndDaxterContext, self).on_print_json(args)
 
     def on_deathlink(self, data: dict):
