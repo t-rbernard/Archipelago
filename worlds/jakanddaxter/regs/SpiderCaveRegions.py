@@ -1,11 +1,11 @@
 from typing import List
 from BaseClasses import MultiWorld
 from .RegionBase import JakAndDaxterRegion
-from .. import JakAndDaxterOptions, EnableOrbsanity
-from ..Rules import can_free_scout_flies, can_fight, can_reach_orbs
+from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
+from ..Rules import can_free_scout_flies, can_fight
 
 
-def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
 
     # A large amount of this area can be covered by single jump, floating platforms, web trampolines, and goggles.
     main_area = JakAndDaxterRegion("Main Area", player, multiworld, level_name, 63)
@@ -119,8 +119,7 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
             orbs.add_orb_locations(13,
                                    bundle_index,
                                    access_rule=lambda state, bundle=bundle_index:
-                                   can_reach_orbs(state, player, multiworld, options, level_name)
-                                   >= (bundle_size * (bundle + 1)))
+                                   world.count_reachable_orbs(state, level_name) >= (bundle_size * (bundle + 1)))
         multiworld.regions.append(orbs)
         main_area.connect(orbs)
 

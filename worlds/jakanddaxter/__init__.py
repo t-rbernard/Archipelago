@@ -1,8 +1,8 @@
-from typing import Dict, Any, ClassVar, Tuple
+from typing import Dict, Any, ClassVar, Tuple, Callable, Optional
 import settings
 
-from Utils import local_path, visualize_regions
-from BaseClasses import Item, ItemClassification, Tutorial
+from Utils import local_path
+from BaseClasses import Item, ItemClassification, Tutorial, CollectionState
 from .GameID import jak1_id, jak1_name, jak1_max
 from .JakAndDaxterOptions import JakAndDaxterOptions, EnableOrbsanity
 from .Locations import JakAndDaxterLocation, location_table
@@ -12,7 +12,6 @@ from .locs import (CellLocations as Cells,
                    SpecialLocations as Specials,
                    OrbCacheLocations as Caches,
                    OrbLocations as Orbs)
-from .Regions import create_regions, verify_orbs_for_trades
 from worlds.AutoWorld import World, WebWorld
 from worlds.LauncherComponents import components, Component, launch_subprocess, Type, icon_paths
 
@@ -105,13 +104,26 @@ class JakAndDaxterWorld(World):
                    if k in {Cells.to_ap_id(t) for t in {11, 12, 31, 32, 33, 96, 97, 98, 99, 13, 14, 34, 35, 100, 101}}},
     }
 
+    # Functions that are Options-driven, we're keeping them as class attributes here so that we don't clog up the
+    # seed generation routines with options checking. So we set these once, and then just use them where needed.
+    count_reachable_orbs: Callable[[CollectionState, str], int]
+    can_trade: Callable[[CollectionState, int, Optional[int]], bool]
+
     def generate_early(self) -> None:
-        # verify that we didn't overload the trade amounts with more orbs than exist in the world.
+        # Verify that we didn't overload the trade amounts with more orbs than exist in the world.
+        from .Regions import verify_orbs_for_trades
         verify_orbs_for_trades(self.options)
+
+        # Options drive which rules to use, so they need to be setup before we create_regions.
+        from .Rules import set_rules
+        set_rules(self, self.multiworld, self.options, self.player)
 
     # This will also set Locations, Location access rules, Region access rules, etc.
     def create_regions(self) -> None:
-        create_regions(self.multiworld, self.options, self.player)
+        from .Regions import create_regions
+        create_regions(self, self.multiworld, self.options, self.player)
+
+        # from Utils import visualize_regions
         # visualize_regions(self.multiworld.get_region("Menu", self.player), "jakanddaxter.puml")
 
     # Helper function to get the correct orb bundle size.

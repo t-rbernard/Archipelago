@@ -3,6 +3,7 @@ from typing import Dict, TypedDict, Union, Optional
 
 from BaseClasses import MultiWorld, CollectionState, ItemClassification
 from Options import OptionError
+from . import JakAndDaxterWorld
 from .JakAndDaxterOptions import (JakAndDaxterOptions,
                                   EnableMoveRandomizer,
                                   EnableOrbsanity,
@@ -13,7 +14,6 @@ from .JakAndDaxterOptions import (JakAndDaxterOptions,
 from .Items import (JakAndDaxterItem,
                     item_table,
                     move_item_table)
-from .Rules import can_reach_orbs
 from .locs import (CellLocations as Cells,
                    ScoutLocations as Scouts)
 from .regs.RegionBase import JakAndDaxterRegion
@@ -35,7 +35,7 @@ from .regs import (GeyserRockRegions as GeyserRock,
                    GolAndMaiasCitadelRegions as GolAndMaiasCitadel)
 
 
-def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
+def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
 
     # Always start with Menu.
     menu = JakAndDaxterRegion("Menu", player, multiworld)
@@ -66,28 +66,27 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
             orbs.add_orb_locations(16,
                                    bundle_index,
                                    access_rule=lambda state, bundle=bundle_index:
-                                   can_reach_orbs(state, player, multiworld, options)
-                                   >= (bundle_size * (bundle + 1)))
+                                   world.count_reachable_orbs(state, "") >= (bundle_size * (bundle + 1)))
         multiworld.regions.append(orbs)
         menu.connect(orbs)
 
     # Build all regions. Include their intra-connecting Rules, their Locations, and their Location access rules.
-    [gr] = GeyserRock.build_regions("Geyser Rock", multiworld, options, player)
-    [sv] = SandoverVillage.build_regions("Sandover Village", multiworld, options, player)
-    [fj, fjp] = ForbiddenJungle.build_regions("Forbidden Jungle", multiworld, options, player)
-    [sb] = SentinelBeach.build_regions("Sentinel Beach", multiworld, options, player)
-    [mi] = MistyIsland.build_regions("Misty Island", multiworld, options, player)
-    [fc] = FireCanyon.build_regions("Fire Canyon", multiworld, options, player)
-    [rv, rvp, rvc] = RockVillage.build_regions("Rock Village", multiworld, options, player)
-    [pb] = PrecursorBasin.build_regions("Precursor Basin", multiworld, options, player)
-    [lpc] = LostPrecursorCity.build_regions("Lost Precursor City", multiworld, options, player)
-    [bs] = BoggySwamp.build_regions("Boggy Swamp", multiworld, options, player)
-    [mp, mpr] = MountainPass.build_regions("Mountain Pass", multiworld, options, player)
-    [vc] = VolcanicCrater.build_regions("Volcanic Crater", multiworld, options, player)
-    [sc] = SpiderCave.build_regions("Spider Cave", multiworld, options, player)
-    [sm] = SnowyMountain.build_regions("Snowy Mountain", multiworld, options, player)
-    [lt] = LavaTube.build_regions("Lava Tube", multiworld, options, player)
-    [gmc, fb, fd] = GolAndMaiasCitadel.build_regions("Gol and Maia's Citadel", multiworld, options, player)
+    [gr] = GeyserRock.build_regions("Geyser Rock", world, multiworld, options, player)
+    [sv] = SandoverVillage.build_regions("Sandover Village", world, multiworld, options, player)
+    [fj, fjp] = ForbiddenJungle.build_regions("Forbidden Jungle", world, multiworld, options, player)
+    [sb] = SentinelBeach.build_regions("Sentinel Beach", world, multiworld, options, player)
+    [mi] = MistyIsland.build_regions("Misty Island", world, multiworld, options, player)
+    [fc] = FireCanyon.build_regions("Fire Canyon", world, multiworld, options, player)
+    [rv, rvp, rvc] = RockVillage.build_regions("Rock Village", world, multiworld, options, player)
+    [pb] = PrecursorBasin.build_regions("Precursor Basin", world, multiworld, options, player)
+    [lpc] = LostPrecursorCity.build_regions("Lost Precursor City", world, multiworld, options, player)
+    [bs] = BoggySwamp.build_regions("Boggy Swamp", world, multiworld, options, player)
+    [mp, mpr] = MountainPass.build_regions("Mountain Pass", world, multiworld, options, player)
+    [vc] = VolcanicCrater.build_regions("Volcanic Crater", world, multiworld, options, player)
+    [sc] = SpiderCave.build_regions("Spider Cave", world, multiworld, options, player)
+    [sm] = SnowyMountain.build_regions("Snowy Mountain", world, multiworld, options, player)
+    [lt] = LavaTube.build_regions("Lava Tube", world, multiworld, options, player)
+    [gmc, fb, fd] = GolAndMaiasCitadel.build_regions("Gol and Maia's Citadel", world, multiworld, options, player)
 
     # Configurable counts of cells for connector levels.
     fc_count = options.fire_canyon_cell_count.value

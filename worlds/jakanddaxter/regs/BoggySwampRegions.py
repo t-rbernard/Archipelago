@@ -1,11 +1,11 @@
 from typing import List
 from BaseClasses import CollectionState, MultiWorld
 from .RegionBase import JakAndDaxterRegion
-from .. import JakAndDaxterOptions, EnableOrbsanity
-from ..Rules import can_fight, can_reach_orbs
+from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
+from ..Rules import can_fight
 
 
-def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
 
     # This level is full of short-medium gaps that cannot be crossed by single jump alone.
     # These helper functions list out the moves that can cross all these gaps (painting with a broad brush but...)
@@ -161,8 +161,7 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
             orbs.add_orb_locations(8,
                                    bundle_index,
                                    access_rule=lambda state, bundle=bundle_index:
-                                   can_reach_orbs(state, player, multiworld, options, level_name)
-                                   >= (bundle_size * (bundle + 1)))
+                                   world.count_reachable_orbs(state, level_name) >= (bundle_size * (bundle + 1)))
         multiworld.regions.append(orbs)
         main_area.connect(orbs)
 
