@@ -156,11 +156,10 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld, level_name)
 
         bundle_size = options.level_orbsanity_bundle_size.value
-        bundle_count = int(200 / bundle_size)
+        bundle_count = 200 // bundle_size
         for bundle_index in range(bundle_count):
             orbs.add_orb_locations(8,
                                    bundle_index,
-                                   bundle_size,
                                    access_rule=lambda state, bundle=bundle_index:
                                    can_reach_orbs(state, player, multiworld, options, level_name)
                                    >= (bundle_size * (bundle + 1)))

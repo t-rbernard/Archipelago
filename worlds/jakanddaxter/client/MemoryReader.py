@@ -147,7 +147,7 @@ class JakAndDaxterMemoryReader:
     # The memory reader just needs the game running.
     gk_process: pymem.process = None
 
-    location_outbox = []
+    location_outbox: List[int] = []
     outbox_index: int = 0
     finished_game: bool = False
 

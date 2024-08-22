@@ -1,8 +1,14 @@
+import typing
+from typing import Dict, TypedDict, Union, Optional
+
 from BaseClasses import MultiWorld, CollectionState, ItemClassification
 from Options import OptionError
 from .JakAndDaxterOptions import (JakAndDaxterOptions,
                                   EnableMoveRandomizer,
                                   EnableOrbsanity,
+                                  FireCanyonCellCount,
+                                  MountainPassCellCount,
+                                  LavaTubeCellCount,
                                   CompletionCondition)
 from .Items import (JakAndDaxterItem,
                     item_table,
@@ -42,7 +48,7 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     for scout_fly_cell in free7.locations:
 
         # Translate from Cell AP ID to Scout AP ID using game ID as an intermediary.
-        scout_fly_id = Scouts.to_ap_id(Cells.to_game_id(scout_fly_cell.address))
+        scout_fly_id = Scouts.to_ap_id(Cells.to_game_id(typing.cast(int, scout_fly_cell.address)))
         scout_fly_cell.access_rule = lambda state, flies=scout_fly_id: state.has(item_table[flies], player, 7)
     multiworld.regions.append(free7)
     menu.connect(free7)
@@ -53,13 +59,12 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld)
 
         bundle_size = options.global_orbsanity_bundle_size.value
-        bundle_count = int(2000 / bundle_size)
+        bundle_count = 2000 // bundle_size
         for bundle_index in range(bundle_count):
 
             # Unlike Per-Level Orbsanity, Global Orbsanity Locations always have a level_index of 16.
             orbs.add_orb_locations(16,
                                    bundle_index,
-                                   bundle_size,
                                    access_rule=lambda state, bundle=bundle_index:
                                    can_reach_orbs(state, player, multiworld, options)
                                    >= (bundle_size * (bundle + 1)))
@@ -129,25 +134,30 @@ def create_regions(multiworld: MultiWorld, options: JakAndDaxterOptions, player:
     elif options.jak_completion_condition == CompletionCondition.option_open_100_cell_door:
         multiworld.completion_condition[player] = lambda state: state.can_reach(fd, "Region", player)
 
+    else:
+        raise OptionError(f"Option conflict with {options.jak_completion_condition.display_name}: "
+                          f"Unknown completion goal ID ({options.jak_completion_condition.value}).")
+
     # As a final sanity check on these options, verify that we have enough locations to allow us to cross
     # the connector levels. E.g. if you set Fire Canyon count to 99, we may not have 99 Locations in hub 1.
     verify_connector_level_accessibility(multiworld, options, player)
 
-    # Also verify that we didn't overload the trade amounts with more orbs than exist in the world.
-    verify_orbs_for_trades(multiworld, options, player)
-
 
 def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
 
-    # Set up a state where we only have the items we need to progress, exactly when we need them, as well as
+    # Set up a fake_state where we only have the items we need to progress, exactly when we need them, as well as
     # any items we would have/get from our other options. The only variable we're actually testing here is the
     # number of power cells we need.
-    state = CollectionState(multiworld)
+    fake_state = CollectionState(multiworld)
     if options.enable_move_randomizer == EnableMoveRandomizer.option_false:
         for move in move_item_table:
-            state.collect(JakAndDaxterItem(move_item_table[move], ItemClassification.progression, move, player))
+            fake_state.collect(JakAndDaxterItem(move_item_table[move], ItemClassification.progression, move, player))
 
-    thresholds = {
+    class Threshold(TypedDict):
+        option: Union[FireCanyonCellCount, MountainPassCellCount, LavaTubeCellCount]
+        required_items: Optional[Dict[int, str]]
+
+    thresholds: Dict[int, Threshold] = {
         0: {
             "option": options.fire_canyon_cell_count,
             "required_items": {},
@@ -170,40 +180,28 @@ def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAnd
         option = thresholds[k]["option"]
         required_items = thresholds[k]["required_items"]
 
-        # Given our current state (starting with 0 Power Cells), determine if there are enough
+        # Given our current fake_state (starting with 0 Power Cells), determine if there are enough
         # Locations to fill with the number of Power Cells needed for the next threshold.
-        locations_available = multiworld.get_reachable_locations(state, player)
+        locations_available = multiworld.get_reachable_locations(fake_state, player)
         if len(locations_available) < option.value:
-            raise OptionError(f"Settings conflict with {option.display_name}: "
+            raise OptionError(f"Option conflict with {option.display_name}: "
                               f"not enough potential locations ({len(locations_available)}) "
                               f"for the required number of power cells ({option.value}).")
 
         # Once we've determined we can pass the current threshold, add what we need to reach the next one.
         for _ in range(option.value):
-            state.collect(JakAndDaxterItem("Power Cell", ItemClassification.progression, loc, player))
+            fake_state.collect(JakAndDaxterItem("Power Cell", ItemClassification.progression, loc, player))
             loc += 1
 
         for item in required_items:
-            state.collect(JakAndDaxterItem(required_items[item], ItemClassification.progression, item, player))
+            fake_state.collect(JakAndDaxterItem(required_items[item], ItemClassification.progression, item, player))
 
 
-def verify_orbs_for_trades(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
-
-    citizen_trade_orbs = 9 * options.citizen_orb_trade_amount
-    if citizen_trade_orbs > 2000:
-        raise OptionError(f"Settings conflict with {options.citizen_orb_trade_amount.display_name}: "
-                          f"required number of orbs to trade with citizens ({citizen_trade_orbs}) "
-                          f"is more than all the orbs in the game (2000).")
-
-    oracle_trade_orbs = 6 * options.oracle_orb_trade_amount
-    if oracle_trade_orbs > 2000:
-        raise OptionError(f"Settings conflict with {options.oracle_orb_trade_amount.display_name}: "
-                          f"required number of orbs to trade with oracles ({oracle_trade_orbs}) "
-                          f"is more than all the orbs in the game (2000).")
+def verify_orbs_for_trades(options: JakAndDaxterOptions):
 
     total_trade_orbs = (9 * options.citizen_orb_trade_amount) + (6 * options.oracle_orb_trade_amount)
     if total_trade_orbs > 2000:
-        raise OptionError(f"Settings conflict with Orb Trade Amounts: "
+        raise OptionError(f"Option conflict with Orb Trade Amounts: "
                           f"required number of orbs for all trades ({total_trade_orbs}) "
                           f"is more than all the orbs in the game (2000). "
                           f"Reduce the value of either {options.citizen_orb_trade_amount.display_name} "

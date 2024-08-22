@@ -19,8 +19,7 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
                      or state.has_all({"Roll", "Roll Jump"}, p)))
 
     def can_jump_blockers(state: CollectionState, p: int) -> bool:
-        return (state.has("Double Jump", p)
-                or state.has("Jump Dive", p)
+        return (state.has_any({"Double Jump", "Jump Dive"}, p)
                 or state.has_all({"Crouch", "Crouch Jump"}, p)
                 or state.has_all({"Crouch", "Crouch Uppercut"}, p)
                 or state.has_all({"Punch", "Punch Uppercut"}, p))
@@ -191,11 +190,10 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld, level_name)
 
         bundle_size = options.level_orbsanity_bundle_size.value
-        bundle_count = int(200 / bundle_size)
+        bundle_count = 200 // bundle_size
         for bundle_index in range(bundle_count):
             orbs.add_orb_locations(12,
                                    bundle_index,
-                                   bundle_size,
                                    access_rule=lambda state, bundle=bundle_index:
                                    can_reach_orbs(state, player, multiworld, options, level_name)
                                    >= (bundle_size * (bundle + 1)))

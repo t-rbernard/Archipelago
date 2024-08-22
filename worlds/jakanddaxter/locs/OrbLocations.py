@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from ..GameID import jak1_id
 
 # Precursor Orbs are not necessarily given ID's by the game.

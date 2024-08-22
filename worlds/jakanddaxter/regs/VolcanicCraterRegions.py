@@ -1,9 +1,9 @@
 from typing import List
-from BaseClasses import CollectionState, MultiWorld
+from BaseClasses import MultiWorld
 from .RegionBase import JakAndDaxterRegion
 from .. import JakAndDaxterOptions, EnableOrbsanity
 from ..Rules import can_free_scout_flies, can_trade, can_reach_orbs
-from ..locs import CellLocations as Cells, ScoutLocations as Scouts
+from ..locs import ScoutLocations as Scouts
 
 
 def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
@@ -44,11 +44,10 @@ def build_regions(level_name: str, multiworld: MultiWorld, options: JakAndDaxter
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld, level_name)
 
         bundle_size = options.level_orbsanity_bundle_size.value
-        bundle_count = int(50 / bundle_size)
+        bundle_count = 50 // bundle_size
         for bundle_index in range(bundle_count):
             orbs.add_orb_locations(11,
                                    bundle_index,
-                                   bundle_size,
                                    access_rule=lambda state, bundle=bundle_index:
                                    can_reach_orbs(state, player, multiworld, options, level_name)
                                    >= (bundle_size * (bundle + 1)))

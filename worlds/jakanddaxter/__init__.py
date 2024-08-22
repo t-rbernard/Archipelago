@@ -1,4 +1,4 @@
-from typing import Dict, Any, ClassVar
+from typing import Dict, Any, ClassVar, Tuple
 import settings
 
 from Utils import local_path, visualize_regions
@@ -12,7 +12,7 @@ from .locs import (CellLocations as Cells,
                    SpecialLocations as Specials,
                    OrbCacheLocations as Caches,
                    OrbLocations as Orbs)
-from .Regions import create_regions
+from .Regions import create_regions, verify_orbs_for_trades
 from worlds.AutoWorld import World, WebWorld
 from worlds.LauncherComponents import components, Component, launch_subprocess, Type, icon_paths
 
@@ -79,48 +79,51 @@ class JakAndDaxterWorld(World):
     item_name_to_id = {item_table[k]: k for k in item_table}
     location_name_to_id = {location_table[k]: k for k in location_table}
     item_name_groups = {
-        "Power Cells": {item_table[k]: k for k in item_table
+        "Power Cells": {item_table[k] for k in item_table
                         if k in range(jak1_id, jak1_id + Scouts.fly_offset)},
-        "Scout Flies": {item_table[k]: k for k in item_table
+        "Scout Flies": {item_table[k] for k in item_table
                         if k in range(jak1_id + Scouts.fly_offset, jak1_id + Specials.special_offset)},
-        "Specials": {item_table[k]: k for k in item_table
+        "Specials": {item_table[k] for k in item_table
                      if k in range(jak1_id + Specials.special_offset, jak1_id + Caches.orb_cache_offset)},
-        "Moves": {item_table[k]: k for k in item_table
+        "Moves": {item_table[k] for k in item_table
                   if k in range(jak1_id + Caches.orb_cache_offset, jak1_id + Orbs.orb_offset)},
-        "Precursor Orbs": {item_table[k]: k for k in item_table
+        "Precursor Orbs": {item_table[k] for k in item_table
                            if k in range(jak1_id + Orbs.orb_offset, jak1_max)},
     }
     location_name_groups = {
-        "Power Cells": {location_table[k]: k for k in location_table
+        "Power Cells": {location_table[k] for k in location_table
                         if k in range(jak1_id, jak1_id + Scouts.fly_offset)},
-        "Scout Flies": {location_table[k]: k for k in location_table
+        "Scout Flies": {location_table[k] for k in location_table
                         if k in range(jak1_id + Scouts.fly_offset, jak1_id + Specials.special_offset)},
-        "Specials": {location_table[k]: k for k in location_table
+        "Specials": {location_table[k] for k in location_table
                      if k in range(jak1_id + Specials.special_offset, jak1_id + Caches.orb_cache_offset)},
-        "Orb Caches": {location_table[k]: k for k in location_table
+        "Orb Caches": {location_table[k] for k in location_table
                        if k in range(jak1_id + Caches.orb_cache_offset, jak1_id + Orbs.orb_offset)},
-        "Precursor Orbs": {location_table[k]: k for k in location_table
+        "Precursor Orbs": {location_table[k] for k in location_table
                            if k in range(jak1_id + Orbs.orb_offset, jak1_max)},
-        "Trades": {location_table[k]: k for k in location_table
+        "Trades": {location_table[k] for k in location_table
                    if k in {Cells.to_ap_id(t) for t in {11, 12, 31, 32, 33, 96, 97, 98, 99, 13, 14, 34, 35, 100, 101}}},
     }
+
+    def generate_early(self) -> None:
+        # verify that we didn't overload the trade amounts with more orbs than exist in the world.
+        verify_orbs_for_trades(self.options)
 
     # This will also set Locations, Location access rules, Region access rules, etc.
     def create_regions(self) -> None:
         create_regions(self.multiworld, self.options, self.player)
-        visualize_regions(self.multiworld.get_region("Menu", self.player), "jakanddaxter.puml")
+        # visualize_regions(self.multiworld.get_region("Menu", self.player), "jakanddaxter.puml")
 
     # Helper function to get the correct orb bundle size.
     def get_orb_bundle_size(self) -> int:
         if self.options.enable_orbsanity == EnableOrbsanity.option_per_level:
             return self.options.level_orbsanity_bundle_size.value
-        elif self.options.enable_orbsanity == EnableOrbsanity.option_global:
+        if self.options.enable_orbsanity == EnableOrbsanity.option_global:
             return self.options.global_orbsanity_bundle_size.value
-        else:
-            return 0
+        return 0
 
     # Helper function to reuse some nasty if/else trees.
-    def item_type_helper(self, item) -> (int, ItemClassification):
+    def item_type_helper(self, item) -> Tuple[int, ItemClassification]:
         # Make 101 Power Cells.
         if item in range(jak1_id, jak1_id + Scouts.fly_offset):
             classification = ItemClassification.progression_skip_balancing
@@ -145,7 +148,7 @@ class JakAndDaxterWorld(World):
         elif item in range(jak1_id + Orbs.orb_offset, jak1_max):
             classification = ItemClassification.progression_skip_balancing
             size = self.get_orb_bundle_size()
-            count = int(2000 / size) if size > 0 else 0  # Don't divide by zero!
+            count = 2000 // size if size > 0 else 0  # Don't divide by zero!
 
         # Under normal circumstances, we will create 0 filler items.
         # We will manually create filler items as needed.
@@ -168,7 +171,7 @@ class JakAndDaxterWorld(World):
             # then fill the item pool with a corresponding amount of filler items.
             if item_name in self.item_name_groups["Moves"] and not self.options.enable_move_randomizer:
                 self.multiworld.push_precollected(self.create_item(item_name))
-                self.multiworld.itempool += [self.create_item(self.get_filler_item_name())]
+                self.multiworld.itempool += [self.create_filler()]
                 continue
 
             # Handle Orbsanity option.
