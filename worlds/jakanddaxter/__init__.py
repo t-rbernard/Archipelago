@@ -5,8 +5,20 @@ from Utils import local_path
 from BaseClasses import Item, ItemClassification, Tutorial, CollectionState
 from .GameID import jak1_id, jak1_name, jak1_max
 from .JakAndDaxterOptions import JakAndDaxterOptions, EnableOrbsanity
-from .Locations import JakAndDaxterLocation, location_table
-from .Items import JakAndDaxterItem, item_table
+from .Locations import (JakAndDaxterLocation,
+                        location_table,
+                        cell_location_table,
+                        scout_location_table,
+                        special_location_table,
+                        cache_location_table,
+                        orb_location_table)
+from .Items import (JakAndDaxterItem,
+                    item_table,
+                    cell_item_table,
+                    scout_item_table,
+                    special_item_table,
+                    move_item_table,
+                    orb_item_table)
 from .locs import (CellLocations as Cells,
                    ScoutLocations as Scouts,
                    SpecialLocations as Specials,
@@ -78,30 +90,20 @@ class JakAndDaxterWorld(World):
     item_name_to_id = {item_table[k]: k for k in item_table}
     location_name_to_id = {location_table[k]: k for k in location_table}
     item_name_groups = {
-        "Power Cells": {item_table[k] for k in item_table
-                        if k in range(jak1_id, jak1_id + Scouts.fly_offset)},
-        "Scout Flies": {item_table[k] for k in item_table
-                        if k in range(jak1_id + Scouts.fly_offset, jak1_id + Specials.special_offset)},
-        "Specials": {item_table[k] for k in item_table
-                     if k in range(jak1_id + Specials.special_offset, jak1_id + Caches.orb_cache_offset)},
-        "Moves": {item_table[k] for k in item_table
-                  if k in range(jak1_id + Caches.orb_cache_offset, jak1_id + Orbs.orb_offset)},
-        "Precursor Orbs": {item_table[k] for k in item_table
-                           if k in range(jak1_id + Orbs.orb_offset, jak1_max)},
+        "Power Cells": {cell_item_table[k] for k in cell_item_table},
+        "Scout Flies": {scout_item_table[k] for k in scout_item_table},
+        "Specials": {special_item_table[k] for k in special_item_table},
+        "Moves": {move_item_table[k] for k in move_item_table},
+        "Precursor Orbs": {orb_item_table[k] for k in orb_item_table},
     }
     location_name_groups = {
-        "Power Cells": {location_table[k] for k in location_table
-                        if k in range(jak1_id, jak1_id + Scouts.fly_offset)},
-        "Scout Flies": {location_table[k] for k in location_table
-                        if k in range(jak1_id + Scouts.fly_offset, jak1_id + Specials.special_offset)},
-        "Specials": {location_table[k] for k in location_table
-                     if k in range(jak1_id + Specials.special_offset, jak1_id + Caches.orb_cache_offset)},
-        "Orb Caches": {location_table[k] for k in location_table
-                       if k in range(jak1_id + Caches.orb_cache_offset, jak1_id + Orbs.orb_offset)},
-        "Precursor Orbs": {location_table[k] for k in location_table
-                           if k in range(jak1_id + Orbs.orb_offset, jak1_max)},
-        "Trades": {location_table[k] for k in location_table
-                   if k in {Cells.to_ap_id(t) for t in {11, 12, 31, 32, 33, 96, 97, 98, 99, 13, 14, 34, 35, 100, 101}}},
+        "Power Cells": {cell_location_table[k] for k in cell_location_table},
+        "Scout Flies": {scout_location_table[k] for k in scout_location_table},
+        "Specials": {special_location_table[k] for k in special_location_table},
+        "Orb Caches": {cache_location_table[k] for k in cache_location_table},
+        "Precursor Orbs": {orb_location_table[k] for k in orb_location_table},
+        "Trades": {location_table[Cells.to_ap_id(k)] for k in
+                   {11, 12, 31, 32, 33, 96, 97, 98, 99, 13, 14, 34, 35, 100, 101}},
     }
 
     # Functions that are Options-driven, we're keeping them as class attributes here so that we don't clog up the
@@ -110,8 +112,15 @@ class JakAndDaxterWorld(World):
     can_trade: Callable[[CollectionState, int, Optional[int]], bool]
 
     def generate_early(self) -> None:
+        # For the fairness of other players in a multiworld game, enforce some friendly limitations on our options,
+        # so we don't cause chaos during seed generation. These friendly limits should **guarantee** a successful gen.
+        if self.multiworld.players > 1:
+            from .Rules import enforce_multiplayer_limits
+            enforce_multiplayer_limits(self.options)
+
         # Verify that we didn't overload the trade amounts with more orbs than exist in the world.
-        from .Regions import verify_orbs_for_trades
+        # This is easy to do by accident in a single-player world.
+        from .Rules import verify_orbs_for_trades
         verify_orbs_for_trades(self.options)
 
         # Options drive which rules to use, so they need to be setup before we create_regions.

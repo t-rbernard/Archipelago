@@ -134,14 +134,11 @@ def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: Ja
         multiworld.completion_condition[player] = lambda state: state.can_reach(fd, "Region", player)
 
     else:
-        raise OptionError(f"Option conflict with {options.jak_completion_condition.display_name}: "
-                          f"Unknown completion goal ID ({options.jak_completion_condition.value}).")
-
-    # As a final sanity check on these options, verify that we have enough locations to allow us to cross
-    # the connector levels. E.g. if you set Fire Canyon count to 99, we may not have 99 Locations in hub 1.
-    verify_connector_level_accessibility(multiworld, options, player)
+        raise OptionError(f"Unknown completion goal ID ({options.jak_completion_condition.value}).")
 
 
+# As a sanity check on these options, verify that we have enough locations to allow us to cross
+# the connector levels. E.g. if you set Fire Canyon count to 99, we may not have 99 Locations in hub 1.
 def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
 
     # Set up a fake_state where we only have the items we need to progress, exactly when we need them, as well as
@@ -181,27 +178,17 @@ def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAnd
 
         # Given our current fake_state (starting with 0 Power Cells), determine if there are enough
         # Locations to fill with the number of Power Cells needed for the next threshold.
-        locations_available = multiworld.get_reachable_locations(fake_state, player)
+        locations_available = multiworld.get_reachable_locations(fake_state)
         if len(locations_available) < option.value:
             raise OptionError(f"Option conflict with {option.display_name}: "
                               f"not enough potential locations ({len(locations_available)}) "
                               f"for the required number of power cells ({option.value}).")
 
         # Once we've determined we can pass the current threshold, add what we need to reach the next one.
-        for _ in range(option.value):
+        new_cells = option.value - fake_state.count("Power Cell", player)
+        for _ in range(new_cells):
             fake_state.collect(JakAndDaxterItem("Power Cell", ItemClassification.progression, loc, player))
             loc += 1
 
         for item in required_items:
             fake_state.collect(JakAndDaxterItem(required_items[item], ItemClassification.progression, item, player))
-
-
-def verify_orbs_for_trades(options: JakAndDaxterOptions):
-
-    total_trade_orbs = (9 * options.citizen_orb_trade_amount) + (6 * options.oracle_orb_trade_amount)
-    if total_trade_orbs > 2000:
-        raise OptionError(f"Option conflict with Orb Trade Amounts: "
-                          f"required number of orbs for all trades ({total_trade_orbs}) "
-                          f"is more than all the orbs in the game (2000). "
-                          f"Reduce the value of either {options.citizen_orb_trade_amount.display_name} "
-                          f"or {options.oracle_orb_trade_amount.display_name}.")

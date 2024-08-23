@@ -99,7 +99,6 @@ def as_float(value: int) -> int:
 
 # "Jak" to be replaced by player name in the Client.
 def autopsy(died: int) -> str:
-    assert died > 0, f"Tried to find Jak's cause of death, but he's still alive!"
     if died in [1, 2, 3, 4]:
         return random.choice(["Jak said goodnight.",
                               "Jak stepped into the light.",

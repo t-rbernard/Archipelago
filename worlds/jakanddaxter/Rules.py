@@ -1,8 +1,17 @@
 import math
 import typing
 from BaseClasses import MultiWorld, CollectionState
+from Options import OptionError
 from . import JakAndDaxterWorld
-from .JakAndDaxterOptions import JakAndDaxterOptions, EnableOrbsanity
+from .JakAndDaxterOptions import (JakAndDaxterOptions,
+                                  EnableOrbsanity,
+                                  GlobalOrbsanityBundleSize,
+                                  PerLevelOrbsanityBundleSize,
+                                  FireCanyonCellCount,
+                                  MountainPassCellCount,
+                                  LavaTubeCellCount,
+                                  CitizenOrbTradeAmount,
+                                  OracleOrbTradeAmount)
 from .Items import orb_item_table
 from .locs import CellLocations as Cells
 from .Locations import location_table
@@ -104,3 +113,65 @@ def can_free_scout_flies(state: CollectionState, player: int) -> bool:
 
 def can_fight(state: CollectionState, player: int) -> bool:
     return state.has_any({"Jump Dive", "Jump Kick", "Punch", "Kick"}, player)
+
+
+def enforce_multiplayer_limits(options: JakAndDaxterOptions):
+    friendly_message = ""
+
+    if options.enable_orbsanity == EnableOrbsanity.option_global:
+        if options.global_orbsanity_bundle_size.value < GlobalOrbsanityBundleSize.friendly_minimum:
+            friendly_message += (f"  "
+                                 f"{options.global_orbsanity_bundle_size.display_name} must be no less than "
+                                 f"{GlobalOrbsanityBundleSize.friendly_minimum} (currently "
+                                 f"{options.global_orbsanity_bundle_size.value}).\n")
+
+    if options.enable_orbsanity == EnableOrbsanity.option_per_level:
+        if options.level_orbsanity_bundle_size.value < PerLevelOrbsanityBundleSize.friendly_minimum:
+            friendly_message += (f"  "
+                                 f"{options.level_orbsanity_bundle_size.display_name} must be no less than "
+                                 f"{PerLevelOrbsanityBundleSize.friendly_minimum} (currently "
+                                 f"{options.level_orbsanity_bundle_size.value}).\n")
+
+    if options.fire_canyon_cell_count.value > FireCanyonCellCount.friendly_maximum:
+        friendly_message += (f"  "
+                             f"{options.fire_canyon_cell_count.display_name} must be no greater than "
+                             f"{FireCanyonCellCount.friendly_maximum} (currently "
+                             f"{options.fire_canyon_cell_count.value}).\n")
+
+    if options.mountain_pass_cell_count.value > MountainPassCellCount.friendly_maximum:
+        friendly_message += (f"  "
+                             f"{options.mountain_pass_cell_count.display_name} must be no greater than "
+                             f"{MountainPassCellCount.friendly_maximum} (currently "
+                             f"{options.mountain_pass_cell_count.value}).\n")
+
+    if options.lava_tube_cell_count.value > LavaTubeCellCount.friendly_maximum:
+        friendly_message += (f"  "
+                             f"{options.lava_tube_cell_count.display_name} must be no greater than "
+                             f"{LavaTubeCellCount.friendly_maximum} (currently "
+                             f"{options.lava_tube_cell_count.value}).\n")
+
+    if options.citizen_orb_trade_amount.value > CitizenOrbTradeAmount.friendly_maximum:
+        friendly_message += (f"  "
+                             f"{options.citizen_orb_trade_amount.display_name} must be no greater than "
+                             f"{CitizenOrbTradeAmount.friendly_maximum} (currently "
+                             f"{options.citizen_orb_trade_amount.value}).\n")
+
+    if options.oracle_orb_trade_amount.value > OracleOrbTradeAmount.friendly_maximum:
+        friendly_message += (f"  "
+                             f"{options.oracle_orb_trade_amount.display_name} must be no greater than "
+                             f"{OracleOrbTradeAmount.friendly_maximum} (currently "
+                             f"{options.oracle_orb_trade_amount.value}).\n")
+
+    if friendly_message != "":
+        raise OptionError(f"Please adjust the following Options for a multiplayer game.\n"
+                          f"{friendly_message}")
+
+
+def verify_orbs_for_trades(options: JakAndDaxterOptions):
+
+    total_trade_orbs = (9 * options.citizen_orb_trade_amount) + (6 * options.oracle_orb_trade_amount)
+    if total_trade_orbs > 2000:
+        raise OptionError(f"Required number of orbs for all trades ({total_trade_orbs}) "
+                          f"is more than all the orbs in the game (2000). "
+                          f"Reduce the value of either {options.citizen_orb_trade_amount.display_name} "
+                          f"or {options.oracle_orb_trade_amount.display_name}.")
