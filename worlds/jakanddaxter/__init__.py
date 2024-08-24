@@ -119,7 +119,12 @@ class JakAndDaxterWorld(World):
             from .Rules import enforce_multiplayer_limits
             enforce_multiplayer_limits(self.options)
 
-        # Cache the orb bundle size and item name.
+        # Verify that we didn't overload the trade amounts with more orbs than exist in the world.
+        # This is easy to do by accident even in a single-player world.
+        from .Rules import verify_orb_trade_amounts
+        verify_orb_trade_amounts(self.options)
+
+        # Cache the orb bundle size and item name for quicker reference.
         if self.options.enable_orbsanity == EnableOrbsanity.option_per_level:
             self.orb_bundle_size = self.options.level_orbsanity_bundle_size.value
             self.orb_bundle_item_name = orb_item_table[self.orb_bundle_size]
@@ -128,14 +133,9 @@ class JakAndDaxterWorld(World):
             self.orb_bundle_size = self.options.global_orbsanity_bundle_size.value
             self.orb_bundle_item_name = orb_item_table[self.orb_bundle_size]
 
-        # Verify that we didn't overload the trade amounts with more orbs than exist in the world.
-        # This is easy to do by accident in a single-player world.
-        from .Rules import verify_orbs_for_trades
-        verify_orbs_for_trades(self.options)
-
         # Options drive which rules to use, so they need to be setup before we create_regions.
         from .Rules import set_rules
-        set_rules(self, self.multiworld, self.options, self.player)
+        set_rules(self, self.options, self.player)
 
     # This will also set Locations, Location access rules, Region access rules, etc.
     def create_regions(self) -> None:
@@ -220,9 +220,8 @@ class JakAndDaxterWorld(World):
     def collect(self, state: CollectionState, item: Item) -> bool:
         change = super().collect(state, item)
         if change:
-            # No matter the option, no matter the item, if the item is progression, set the caches to stale.
-            if item.classification in {ItemClassification.progression, ItemClassification.progression_skip_balancing}:
-                state.prog_items[self.player]["Reachable Orbs Fresh"] = False
+            # No matter the option, no matter the item, set the caches to stale.
+            state.prog_items[self.player]["Reachable Orbs Fresh"] = False
 
             # Matching the item name implies Orbsanity is ON, so we don't need to check the option.
             # When Orbsanity is OFF, there won't even be any orb bundle items to collect.
@@ -234,25 +233,24 @@ class JakAndDaxterWorld(World):
     def remove(self, state: CollectionState, item: Item) -> bool:
         change = super().remove(state, item)
         if change:
-            # No matter the option, no matter the item, if the item is progression, set the caches to stale.
-            if item.classification in {ItemClassification.progression, ItemClassification.progression_skip_balancing}:
-                state.prog_items[self.player]["Reachable Orbs Fresh"] = False
-
-            # Removing an item may force us to reconsider what regions are available to you.
-            # By setting Reachable Orbs back to 0, we can allow the custom can_reach function to repopulate it.
-            # for level_name in Orbs.level_info:
-            #     state.prog_items[self.player][f"{level_name} Reachable Orbs".strip()] = 0
+            # No matter the option, no matter the item, set the caches to stale.
+            state.prog_items[self.player]["Reachable Orbs Fresh"] = False
 
             # The opposite of what we did in collect: Take away from the player
             # the appropriate number of Tradeable Orbs based on bundle size.
             if item.name == self.orb_bundle_item_name:
                 state.prog_items[self.player]["Tradeable Orbs"] -= self.orb_bundle_size
 
-            # TODO - 3.8 compatibility, remove when no longer required.
-            if state.prog_items[self.player]["Reachable Orbs"] < 1:
-                del state.prog_items[self.player]["Reachable Orbs"]
+            # TODO - 3.8 compatibility, remove this block when no longer required.
             if state.prog_items[self.player]["Tradeable Orbs"] < 1:
                 del state.prog_items[self.player]["Tradeable Orbs"]
+            if state.prog_items[self.player]["Reachable Orbs"] < 1:
+                del state.prog_items[self.player]["Reachable Orbs"]
+            levels = (level for level in Orbs.level_info if level != "")
+            for level in levels:
+                if state.prog_items[self.player][f"{level} Reachable Orbs".strip()] < 1:
+                    del state.prog_items[self.player][f"{level} Reachable Orbs".strip()]
+
         return change
 
     def fill_slot_data(self) -> Dict[str, Any]:

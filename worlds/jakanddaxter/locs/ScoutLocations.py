@@ -187,7 +187,7 @@ locVC_scoutTable = {
 
 # Spider Cave
 locSC_scoutTable = {
-    327765: "SC: Scout Fly Near Dark Dave Entrance",
+    327765: "SC: Scout Fly Near Dark Cave Entrance",
     262229: "SC: Scout Fly In Dark Cave",
     393301: "SC: Scout Fly Main Cave, Overlooking Entrance",
     196693: "SC: Scout Fly Main Cave, Near Dark Crystal",

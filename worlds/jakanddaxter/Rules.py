@@ -16,31 +16,54 @@ from .Locations import location_table
 from .regs.RegionBase import JakAndDaxterRegion
 
 
-def set_rules(world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
+def set_rules(world: JakAndDaxterWorld, options: JakAndDaxterOptions, player: int):
 
-    # Per Level Orbsanity: trade logic is orbsanity, reach logic is level.
-    if options.enable_orbsanity == EnableOrbsanity.option_per_level:
-        world.can_trade = lambda state, required_orbs, required_previous_trade: (
-            can_trade_orbsanity(state, player, required_orbs, required_previous_trade))
-
-        world.count_reachable_orbs = lambda state, level_name: (
-            count_reachable_orbs_level(state, player, multiworld, level_name))
-
-    # Global Orbsanity: trade logic is orbsanity, but reach logic is global.
-    elif options.enable_orbsanity == EnableOrbsanity.option_global:
-        world.can_trade = lambda state, required_orbs, required_previous_trade: (
-            can_trade_orbsanity(state, player, required_orbs, required_previous_trade))
-
-        world.count_reachable_orbs = lambda state, level_name: (
-            count_reachable_orbs_global(state, player, multiworld))
-
-    # No Orbsanity: trade logic is normal, and reach logic is still global (vanilla orbs are all fungible).
-    else:
+    if options.enable_orbsanity == EnableOrbsanity.option_off:
         world.can_trade = lambda state, required_orbs, required_previous_trade: (
             can_trade_vanilla(state, player, required_orbs, required_previous_trade))
+    else:
+        world.can_trade = lambda state, required_orbs, required_previous_trade: (
+            can_trade_orbsanity(state, player, required_orbs, required_previous_trade))
 
-        world.count_reachable_orbs = lambda state, level_name: (
-            count_reachable_orbs_global(state, player, multiworld))
+
+def recalculate_reachable_orbs(state: CollectionState, player: int) -> None:
+
+    if not state.prog_items[player]["Reachable Orbs Fresh"]:
+
+        # Recalculate every level, every time the cache is stale, because you don't know
+        # when a specific bundle of orbs in one level may unlock access to another.
+        levels = (level for level in Orbs.level_info if level != "")
+        for level in levels:
+            state.prog_items[player][f"{level} Reachable Orbs".strip()] = (
+                count_reachable_orbs_level(state, player, state.multiworld, level))
+
+        # Also recalculate the global count, still used even when Orbsanity is Off.
+        state.prog_items[player]["Reachable Orbs"] = count_reachable_orbs_global(state, player, state.multiworld)
+        state.prog_items[player]["Reachable Orbs Fresh"] = True
+
+
+def count_reachable_orbs_global(state: CollectionState,
+                                player: int,
+                                multiworld: MultiWorld) -> int:
+
+    accessible_orbs = 0
+    for region in multiworld.get_regions(player):
+        if region.can_reach(state):
+            accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count  # Only cast when we need to.
+    return accessible_orbs
+
+
+def count_reachable_orbs_level(state: CollectionState,
+                               player: int,
+                               multiworld: MultiWorld,
+                               level_name: str = "") -> int:
+
+    accessible_orbs = 0
+    regions = typing.cast(typing.List[JakAndDaxterRegion], multiworld.get_regions(player))  # Need to cast all upfront.
+    for region in regions:
+        if region.level_name == level_name and region.can_reach(state):
+            accessible_orbs += region.orb_count
+    return accessible_orbs
 
 
 def can_reach_orbs_global(state: CollectionState,
@@ -48,11 +71,8 @@ def can_reach_orbs_global(state: CollectionState,
                           world: JakAndDaxterWorld,
                           bundle: int) -> bool:
 
-    if not state.prog_items[player]["Reachable Orbs Fresh"]:
-        state.prog_items[player]["Reachable Orbs Fresh"] = True
-        state.prog_items[player]["Reachable Orbs"] = count_reachable_orbs_global(state, player, state.multiworld)
-
-    return state.has(f"Reachable Orbs", player, world.orb_bundle_size * (bundle + 1))
+    recalculate_reachable_orbs(state, player)
+    return state.has("Reachable Orbs", player, world.orb_bundle_size * (bundle + 1))
 
 
 def can_reach_orbs_level(state: CollectionState,
@@ -61,33 +81,8 @@ def can_reach_orbs_level(state: CollectionState,
                          level_name: str,
                          bundle: int) -> bool:
 
-    if not state.prog_items[player]["Reachable Orbs Fresh"]:
-        state.prog_items[player]["Reachable Orbs Fresh"] = True
-        state.prog_items[player][f"{level_name} Reachable Orbs"] = (
-            count_reachable_orbs_level(state, player, state.multiworld, level_name))
-
+    recalculate_reachable_orbs(state, player)
     return state.has(f"{level_name} Reachable Orbs", player, world.orb_bundle_size * (bundle + 1))
-
-
-def count_reachable_orbs_global(state: CollectionState, player: int, multiworld: MultiWorld) -> int:
-
-    accessible_orbs = 0
-    for region in multiworld.get_regions(player):
-        if region.can_reach(state):
-            accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count
-
-    return accessible_orbs
-
-
-def count_reachable_orbs_level(state: CollectionState, player: int, multiworld: MultiWorld, level_name: str = "") -> int:
-
-    accessible_orbs = 0
-    regions = typing.cast(typing.List[JakAndDaxterRegion], multiworld.get_regions(player))
-    for region in regions:
-        if region.level_name == level_name and region.can_reach(state):
-            accessible_orbs += region.orb_count
-
-    return accessible_orbs
 
 
 def can_trade_vanilla(state: CollectionState,
@@ -95,13 +90,7 @@ def can_trade_vanilla(state: CollectionState,
                       required_orbs: int,
                       required_previous_trade: typing.Optional[int] = None) -> bool:
 
-    if not state.prog_items[player]["Reachable Orbs Fresh"]:
-        state.prog_items[player]["Reachable Orbs Fresh"] = True
-        for level_name in Orbs.level_info:
-            state.prog_items[player][f"{level_name} Reachable Orbs".strip()] = (
-                count_reachable_orbs_level(state, player, state.multiworld, level_name))
-        state.prog_items[player]["Reachable Orbs"] = count_reachable_orbs_global(state, player, state.multiworld)
-
+    recalculate_reachable_orbs(state, player)  # With Orbsanity Off, Reachable Orbs are in fact Tradeable Orbs.
     if required_previous_trade:
         name_of_previous_trade = location_table[Cells.to_ap_id(required_previous_trade)]
         return (state.has("Reachable Orbs", player, required_orbs)
@@ -115,13 +104,7 @@ def can_trade_orbsanity(state: CollectionState,
                         required_orbs: int,
                         required_previous_trade: typing.Optional[int] = None) -> bool:
 
-    if not state.prog_items[player]["Reachable Orbs Fresh"]:
-        state.prog_items[player]["Reachable Orbs Fresh"] = True
-        for level_name in Orbs.level_info:
-            state.prog_items[player][f"{level_name} Reachable Orbs".strip()] = (
-                count_reachable_orbs_level(state, player, state.multiworld, level_name))
-        state.prog_items[player]["Reachable Orbs"] = count_reachable_orbs_global(state, player, state.multiworld)
-
+    recalculate_reachable_orbs(state, player)  # Yes, even Orbsanity trades may unlock access to new Reachable Orbs.
     if required_previous_trade:
         name_of_previous_trade = location_table[Cells.to_ap_id(required_previous_trade)]
         return (state.has("Tradeable Orbs", player, required_orbs)
@@ -190,7 +173,7 @@ def enforce_multiplayer_limits(options: JakAndDaxterOptions):
                           f"{friendly_message}")
 
 
-def verify_orbs_for_trades(options: JakAndDaxterOptions):
+def verify_orb_trade_amounts(options: JakAndDaxterOptions):
 
     total_trade_orbs = (9 * options.citizen_orb_trade_amount) + (6 * options.oracle_orb_trade_amount)
     if total_trade_orbs > 2000:

@@ -223,7 +223,7 @@ class JakAndDaxterMemoryReader:
         if marker_address:
             # At this address is another address that contains the struct we're looking for: the game's state.
             # From here we need to add the length in bytes for the marker and 4 bytes of padding,
-            # and the struct address is 8 bytes long (it's a uint64).
+            # and the struct address is 8 bytes long (it's an uint64).
             goal_pointer = marker_address + len(self.marker) + 4
             self.goal_address = int.from_bytes(self.gk_process.read_bytes(goal_pointer, sizeof_uint64),
                                                byteorder="little",
