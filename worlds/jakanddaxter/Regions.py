@@ -14,6 +14,7 @@ from .JakAndDaxterOptions import (JakAndDaxterOptions,
 from .Items import (JakAndDaxterItem,
                     item_table,
                     move_item_table)
+from .Rules import can_reach_orbs_global
 from .locs import (CellLocations as Cells,
                    ScoutLocations as Scouts)
 from .regs.RegionBase import JakAndDaxterRegion
@@ -58,15 +59,14 @@ def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: Ja
     if options.enable_orbsanity == EnableOrbsanity.option_global:
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld)
 
-        bundle_size = options.global_orbsanity_bundle_size.value
-        bundle_count = 2000 // bundle_size
+        bundle_count = 2000 // world.orb_bundle_size
         for bundle_index in range(bundle_count):
 
             # Unlike Per-Level Orbsanity, Global Orbsanity Locations always have a level_index of 16.
             orbs.add_orb_locations(16,
                                    bundle_index,
                                    access_rule=lambda state, bundle=bundle_index:
-                                   world.count_reachable_orbs(state, "") >= (bundle_size * (bundle + 1)))
+                                   can_reach_orbs_global(state, player, world, bundle))
         multiworld.regions.append(orbs)
         menu.connect(orbs)
 

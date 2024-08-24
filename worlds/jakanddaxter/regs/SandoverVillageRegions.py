@@ -2,7 +2,7 @@ from typing import List
 from BaseClasses import MultiWorld
 from .RegionBase import JakAndDaxterRegion
 from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
-from ..Rules import can_free_scout_flies
+from ..Rules import can_free_scout_flies, can_reach_orbs_level
 
 
 def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
@@ -66,13 +66,12 @@ def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWo
     if options.enable_orbsanity == EnableOrbsanity.option_per_level:
         orbs = JakAndDaxterRegion("Orbsanity", player, multiworld, level_name)
 
-        bundle_size = options.level_orbsanity_bundle_size.value
-        bundle_count = 50 // bundle_size
+        bundle_count = 50 // world.orb_bundle_size
         for bundle_index in range(bundle_count):
             orbs.add_orb_locations(1,
                                    bundle_index,
-                                   access_rule=lambda state, bundle=bundle_index:
-                                   world.count_reachable_orbs(state, level_name) >= (bundle_size * (bundle + 1)))
+                                   access_rule=lambda state, level=level_name, bundle=bundle_index:
+                                   can_reach_orbs_level(state, player, world, level, bundle))
         multiworld.regions.append(orbs)
         main_area.connect(orbs)
 
