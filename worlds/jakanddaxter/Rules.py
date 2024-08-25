@@ -11,12 +11,15 @@ from .JakAndDaxterOptions import (JakAndDaxterOptions,
                                   LavaTubeCellCount,
                                   CitizenOrbTradeAmount,
                                   OracleOrbTradeAmount)
-from .locs import CellLocations as Cells, OrbLocations as Orbs
+from .locs import CellLocations as Cells
 from .Locations import location_table
+from .Levels import level_table
 from .regs.RegionBase import JakAndDaxterRegion
 
 
-def set_rules(world: JakAndDaxterWorld, options: JakAndDaxterOptions, player: int):
+def set_orb_trade_rule(world: JakAndDaxterWorld):
+    options = world.options
+    player = world.player
 
     if options.enable_orbsanity == EnableOrbsanity.option_off:
         world.can_trade = lambda state, required_orbs, required_previous_trade: (
@@ -32,8 +35,7 @@ def recalculate_reachable_orbs(state: CollectionState, player: int) -> None:
 
         # Recalculate every level, every time the cache is stale, because you don't know
         # when a specific bundle of orbs in one level may unlock access to another.
-        levels = (level for level in Orbs.level_info if level != "")
-        for level in levels:
+        for level in level_table:
             state.prog_items[player][f"{level} Reachable Orbs".strip()] = (
                 count_reachable_orbs_level(state, player, state.multiworld, level))
 
@@ -49,7 +51,8 @@ def count_reachable_orbs_global(state: CollectionState,
     accessible_orbs = 0
     for region in multiworld.get_regions(player):
         if region.can_reach(state):
-            accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count  # Only cast when we need to.
+            # Only cast the region when we need to.
+            accessible_orbs += typing.cast(JakAndDaxterRegion, region).orb_count
     return accessible_orbs
 
 
@@ -59,8 +62,8 @@ def count_reachable_orbs_level(state: CollectionState,
                                level_name: str = "") -> int:
 
     accessible_orbs = 0
-    regions = typing.cast(typing.List[JakAndDaxterRegion], multiworld.get_regions(player))  # Need to cast all upfront.
-    for region in regions:
+    # Need to cast all regions upfront.
+    for region in typing.cast(typing.List[JakAndDaxterRegion], multiworld.get_regions(player)):
         if region.level_name == level_name and region.can_reach(state):
             accessible_orbs += region.orb_count
     return accessible_orbs
@@ -95,8 +98,7 @@ def can_trade_vanilla(state: CollectionState,
         name_of_previous_trade = location_table[Cells.to_ap_id(required_previous_trade)]
         return (state.has("Reachable Orbs", player, required_orbs)
                 and state.can_reach_location(name_of_previous_trade, player=player))
-    else:
-        return state.has("Reachable Orbs", player, required_orbs)
+    return state.has("Reachable Orbs", player, required_orbs)
 
 
 def can_trade_orbsanity(state: CollectionState,
@@ -109,8 +111,7 @@ def can_trade_orbsanity(state: CollectionState,
         name_of_previous_trade = location_table[Cells.to_ap_id(required_previous_trade)]
         return (state.has("Tradeable Orbs", player, required_orbs)
                 and state.can_reach_location(name_of_previous_trade, player=player))
-    else:
-        return state.has("Tradeable Orbs", player, required_orbs)
+    return state.has("Tradeable Orbs", player, required_orbs)
 
 
 def can_free_scout_flies(state: CollectionState, player: int) -> bool:
@@ -124,19 +125,19 @@ def can_fight(state: CollectionState, player: int) -> bool:
 def enforce_multiplayer_limits(options: JakAndDaxterOptions):
     friendly_message = ""
 
-    if options.enable_orbsanity == EnableOrbsanity.option_global:
-        if options.global_orbsanity_bundle_size.value < GlobalOrbsanityBundleSize.friendly_minimum:
-            friendly_message += (f"  "
-                                 f"{options.global_orbsanity_bundle_size.display_name} must be no less than "
-                                 f"{GlobalOrbsanityBundleSize.friendly_minimum} (currently "
-                                 f"{options.global_orbsanity_bundle_size.value}).\n")
+    if (options.enable_orbsanity == EnableOrbsanity.option_global
+            and options.global_orbsanity_bundle_size.value < GlobalOrbsanityBundleSize.friendly_minimum):
+        friendly_message += (f"  "
+                             f"{options.global_orbsanity_bundle_size.display_name} must be no less than "
+                             f"{GlobalOrbsanityBundleSize.friendly_minimum} (currently "
+                             f"{options.global_orbsanity_bundle_size.value}).\n")
 
-    if options.enable_orbsanity == EnableOrbsanity.option_per_level:
-        if options.level_orbsanity_bundle_size.value < PerLevelOrbsanityBundleSize.friendly_minimum:
-            friendly_message += (f"  "
-                                 f"{options.level_orbsanity_bundle_size.display_name} must be no less than "
-                                 f"{PerLevelOrbsanityBundleSize.friendly_minimum} (currently "
-                                 f"{options.level_orbsanity_bundle_size.value}).\n")
+    if (options.enable_orbsanity == EnableOrbsanity.option_per_level
+            and options.level_orbsanity_bundle_size.value < PerLevelOrbsanityBundleSize.friendly_minimum):
+        friendly_message += (f"  "
+                             f"{options.level_orbsanity_bundle_size.display_name} must be no less than "
+                             f"{PerLevelOrbsanityBundleSize.friendly_minimum} (currently "
+                             f"{options.level_orbsanity_bundle_size.value}).\n")
 
     if options.fire_canyon_cell_count.value > FireCanyonCellCount.friendly_maximum:
         friendly_message += (f"  "

@@ -1,11 +1,15 @@
 from typing import List
-from BaseClasses import CollectionState, MultiWorld
+
+from BaseClasses import CollectionState
 from .RegionBase import JakAndDaxterRegion
-from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
+from .. import EnableOrbsanity, JakAndDaxterWorld
 from ..Rules import can_fight, can_reach_orbs_level
 
 
-def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, world: JakAndDaxterWorld) -> List[JakAndDaxterRegion]:
+    multiworld = world.multiworld
+    options = world.options
+    player = world.player
 
     # This level is full of short-medium gaps that cannot be crossed by single jump alone.
     # These helper functions list out the moves that can cross all these gaps (painting with a broad brush but...)

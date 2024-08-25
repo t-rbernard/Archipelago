@@ -1,12 +1,15 @@
 from typing import List
-from BaseClasses import MultiWorld
+
 from .RegionBase import JakAndDaxterRegion
-from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
+from .. import EnableOrbsanity, JakAndDaxterWorld
 from ..Rules import can_free_scout_flies, can_reach_orbs_level
 from ..locs import ScoutLocations as Scouts
 
 
-def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, world: JakAndDaxterWorld) -> List[JakAndDaxterRegion]:
+    multiworld = world.multiworld
+    options = world.options
+    player = world.player
 
     total_trade_orbs = (9 * options.citizen_orb_trade_amount) + (6 * options.oracle_orb_trade_amount)
 

@@ -1,23 +1,11 @@
 import typing
-from typing import Dict, TypedDict, Union, Optional
 
-from BaseClasses import MultiWorld, CollectionState, ItemClassification
 from Options import OptionError
 from . import JakAndDaxterWorld
-from .JakAndDaxterOptions import (JakAndDaxterOptions,
-                                  EnableMoveRandomizer,
-                                  EnableOrbsanity,
-                                  FireCanyonCellCount,
-                                  MountainPassCellCount,
-                                  LavaTubeCellCount,
-                                  CompletionCondition)
-from .Items import (JakAndDaxterItem,
-                    item_table,
-                    move_item_table)
+from .Items import item_table
+from .JakAndDaxterOptions import EnableOrbsanity, CompletionCondition
 from .Rules import can_reach_orbs_global
-from .locs import (CellLocations as Cells,
-                   ScoutLocations as Scouts)
-from .regs.RegionBase import JakAndDaxterRegion
+from .locs import CellLocations as Cells, ScoutLocations as Scouts
 from .regs import (GeyserRockRegions as GeyserRock,
                    SandoverVillageRegions as SandoverVillage,
                    ForbiddenJungleRegions as ForbiddenJungle,
@@ -34,9 +22,13 @@ from .regs import (GeyserRockRegions as GeyserRock,
                    SnowyMountainRegions as SnowyMountain,
                    LavaTubeRegions as LavaTube,
                    GolAndMaiasCitadelRegions as GolAndMaiasCitadel)
+from .regs.RegionBase import JakAndDaxterRegion
 
 
-def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
+def create_regions(world: JakAndDaxterWorld):
+    multiworld = world.multiworld
+    options = world.options
+    player = world.player
 
     # Always start with Menu.
     menu = JakAndDaxterRegion("Menu", player, multiworld)
@@ -71,22 +63,22 @@ def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: Ja
         menu.connect(orbs)
 
     # Build all regions. Include their intra-connecting Rules, their Locations, and their Location access rules.
-    [gr] = GeyserRock.build_regions("Geyser Rock", world, multiworld, options, player)
-    [sv] = SandoverVillage.build_regions("Sandover Village", world, multiworld, options, player)
-    [fj, fjp] = ForbiddenJungle.build_regions("Forbidden Jungle", world, multiworld, options, player)
-    [sb] = SentinelBeach.build_regions("Sentinel Beach", world, multiworld, options, player)
-    [mi] = MistyIsland.build_regions("Misty Island", world, multiworld, options, player)
-    [fc] = FireCanyon.build_regions("Fire Canyon", world, multiworld, options, player)
-    [rv, rvp, rvc] = RockVillage.build_regions("Rock Village", world, multiworld, options, player)
-    [pb] = PrecursorBasin.build_regions("Precursor Basin", world, multiworld, options, player)
-    [lpc] = LostPrecursorCity.build_regions("Lost Precursor City", world, multiworld, options, player)
-    [bs] = BoggySwamp.build_regions("Boggy Swamp", world, multiworld, options, player)
-    [mp, mpr] = MountainPass.build_regions("Mountain Pass", world, multiworld, options, player)
-    [vc] = VolcanicCrater.build_regions("Volcanic Crater", world, multiworld, options, player)
-    [sc] = SpiderCave.build_regions("Spider Cave", world, multiworld, options, player)
-    [sm] = SnowyMountain.build_regions("Snowy Mountain", world, multiworld, options, player)
-    [lt] = LavaTube.build_regions("Lava Tube", world, multiworld, options, player)
-    [gmc, fb, fd] = GolAndMaiasCitadel.build_regions("Gol and Maia's Citadel", world, multiworld, options, player)
+    [gr] = GeyserRock.build_regions("Geyser Rock", world)
+    [sv] = SandoverVillage.build_regions("Sandover Village", world)
+    [fj, fjp] = ForbiddenJungle.build_regions("Forbidden Jungle", world)
+    [sb] = SentinelBeach.build_regions("Sentinel Beach", world)
+    [mi] = MistyIsland.build_regions("Misty Island", world)
+    [fc] = FireCanyon.build_regions("Fire Canyon", world)
+    [rv, rvp, rvc] = RockVillage.build_regions("Rock Village", world)
+    [pb] = PrecursorBasin.build_regions("Precursor Basin", world)
+    [lpc] = LostPrecursorCity.build_regions("Lost Precursor City", world)
+    [bs] = BoggySwamp.build_regions("Boggy Swamp", world)
+    [mp, mpr] = MountainPass.build_regions("Mountain Pass", world)
+    [vc] = VolcanicCrater.build_regions("Volcanic Crater", world)
+    [sc] = SpiderCave.build_regions("Spider Cave", world)
+    [sm] = SnowyMountain.build_regions("Snowy Mountain", world)
+    [lt] = LavaTube.build_regions("Lava Tube", world)
+    [gmc, fb, fd] = GolAndMaiasCitadel.build_regions("Gol and Maia's Citadel", world)
 
     # Configurable counts of cells for connector levels.
     fc_count = options.fire_canyon_cell_count.value
@@ -136,59 +128,3 @@ def create_regions(world: JakAndDaxterWorld, multiworld: MultiWorld, options: Ja
     else:
         raise OptionError(f"Unknown completion goal ID ({options.jak_completion_condition.value}).")
 
-
-# As a sanity check on these options, verify that we have enough locations to allow us to cross
-# the connector levels. E.g. if you set Fire Canyon count to 99, we may not have 99 Locations in hub 1.
-def verify_connector_level_accessibility(multiworld: MultiWorld, options: JakAndDaxterOptions, player: int):
-
-    # Set up a fake_state where we only have the items we need to progress, exactly when we need them, as well as
-    # any items we would have/get from our other options. The only variable we're actually testing here is the
-    # number of power cells we need.
-    fake_state = CollectionState(multiworld)
-    if options.enable_move_randomizer == EnableMoveRandomizer.option_false:
-        for move in move_item_table:
-            fake_state.collect(JakAndDaxterItem(move_item_table[move], ItemClassification.progression, move, player))
-
-    class Threshold(TypedDict):
-        option: Union[FireCanyonCellCount, MountainPassCellCount, LavaTubeCellCount]
-        required_items: Optional[Dict[int, str]]
-
-    thresholds: Dict[int, Threshold] = {
-        0: {
-            "option": options.fire_canyon_cell_count,
-            "required_items": {},
-        },
-        1: {
-            "option": options.mountain_pass_cell_count,
-            "required_items": {
-                33: "Warrior's Pontoons",
-                10945: "Double Jump",
-            },
-        },
-        2: {
-            "option": options.lava_tube_cell_count,
-            "required_items": {},
-        },
-    }
-
-    loc = 0
-    for k in thresholds:
-        option = thresholds[k]["option"]
-        required_items = thresholds[k]["required_items"]
-
-        # Given our current fake_state (starting with 0 Power Cells), determine if there are enough
-        # Locations to fill with the number of Power Cells needed for the next threshold.
-        locations_available = multiworld.get_reachable_locations(fake_state)
-        if len(locations_available) < option.value:
-            raise OptionError(f"Option conflict with {option.display_name}: "
-                              f"not enough potential locations ({len(locations_available)}) "
-                              f"for the required number of power cells ({option.value}).")
-
-        # Once we've determined we can pass the current threshold, add what we need to reach the next one.
-        new_cells = option.value - fake_state.count("Power Cell", player)
-        for _ in range(new_cells):
-            fake_state.collect(JakAndDaxterItem("Power Cell", ItemClassification.progression, loc, player))
-            loc += 1
-
-        for item in required_items:
-            fake_state.collect(JakAndDaxterItem(required_items[item], ItemClassification.progression, item, player))

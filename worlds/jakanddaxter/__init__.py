@@ -19,6 +19,7 @@ from .Items import (JakAndDaxterItem,
                     special_item_table,
                     move_item_table,
                     orb_item_table)
+from .Levels import level_table, level_table_with_global
 from .locs import (CellLocations as Cells,
                    ScoutLocations as Scouts,
                    SpecialLocations as Specials,
@@ -90,18 +91,18 @@ class JakAndDaxterWorld(World):
     item_name_to_id = {item_table[k]: k for k in item_table}
     location_name_to_id = {location_table[k]: k for k in location_table}
     item_name_groups = {
-        "Power Cells": {cell_item_table[k] for k in cell_item_table},
-        "Scout Flies": {scout_item_table[k] for k in scout_item_table},
-        "Specials": {special_item_table[k] for k in special_item_table},
-        "Moves": {move_item_table[k] for k in move_item_table},
-        "Precursor Orbs": {orb_item_table[k] for k in orb_item_table},
+        "Power Cells": set(cell_item_table.values()),
+        "Scout Flies": set(scout_item_table.values()),
+        "Specials": set(special_item_table.values()),
+        "Moves": set(move_item_table.values()),
+        "Precursor Orbs": set(orb_item_table.values()),
     }
     location_name_groups = {
-        "Power Cells": {cell_location_table[k] for k in cell_location_table},
-        "Scout Flies": {scout_location_table[k] for k in scout_location_table},
-        "Specials": {special_location_table[k] for k in special_location_table},
-        "Orb Caches": {cache_location_table[k] for k in cache_location_table},
-        "Precursor Orbs": {orb_location_table[k] for k in orb_location_table},
+        "Power Cells": set(cell_location_table.values()),
+        "Scout Flies": set(scout_location_table.values()),
+        "Specials": set(special_location_table.values()),
+        "Orb Caches": set(cache_location_table.values()),
+        "Precursor Orbs": set(orb_location_table.values()),
         "Trades": {location_table[Cells.to_ap_id(k)] for k in
                    {11, 12, 31, 32, 33, 96, 97, 98, 99, 13, 14, 34, 35, 100, 101}},
     }
@@ -128,19 +129,18 @@ class JakAndDaxterWorld(World):
         if self.options.enable_orbsanity == EnableOrbsanity.option_per_level:
             self.orb_bundle_size = self.options.level_orbsanity_bundle_size.value
             self.orb_bundle_item_name = orb_item_table[self.orb_bundle_size]
-
-        if self.options.enable_orbsanity == EnableOrbsanity.option_global:
+        elif self.options.enable_orbsanity == EnableOrbsanity.option_global:
             self.orb_bundle_size = self.options.global_orbsanity_bundle_size.value
             self.orb_bundle_item_name = orb_item_table[self.orb_bundle_size]
 
-        # Options drive which rules to use, so they need to be setup before we create_regions.
-        from .Rules import set_rules
-        set_rules(self, self.options, self.player)
+        # Options drive which trade rules to use, so they need to be setup before we create_regions.
+        from .Rules import set_orb_trade_rule
+        set_orb_trade_rule(self)
 
     # This will also set Locations, Location access rules, Region access rules, etc.
     def create_regions(self) -> None:
         from .Regions import create_regions
-        create_regions(self, self.multiworld, self.options, self.player)
+        create_regions(self)
 
         # from Utils import visualize_regions
         # visualize_regions(self.multiworld.get_region("Menu", self.player), "jakanddaxter.puml")
@@ -200,8 +200,8 @@ class JakAndDaxterWorld(World):
             # If it is OFF, don't add any orb bundles to the item pool, period.
             # If it is ON, don't add any orb bundles that don't match the chosen option.
             if (item_name in self.item_name_groups["Precursor Orbs"]
-                and ((self.options.enable_orbsanity == EnableOrbsanity.option_off
-                      or item_name != self.orb_bundle_item_name))):
+                and (self.options.enable_orbsanity == EnableOrbsanity.option_off
+                     or item_name != self.orb_bundle_item_name)):
                 continue
 
             # In every other scenario, do this.
@@ -246,8 +246,7 @@ class JakAndDaxterWorld(World):
                 del state.prog_items[self.player]["Tradeable Orbs"]
             if state.prog_items[self.player]["Reachable Orbs"] < 1:
                 del state.prog_items[self.player]["Reachable Orbs"]
-            levels = (level for level in Orbs.level_info if level != "")
-            for level in levels:
+            for level in level_table:
                 if state.prog_items[self.player][f"{level} Reachable Orbs".strip()] < 1:
                     del state.prog_items[self.player][f"{level} Reachable Orbs".strip()]
 

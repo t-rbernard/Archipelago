@@ -1,13 +1,15 @@
 from typing import List
-from BaseClasses import MultiWorld
-from .RegionBase import JakAndDaxterRegion
-from .. import JakAndDaxterOptions, EnableOrbsanity, JakAndDaxterWorld
-from ..Rules import can_reach_orbs_level
 
+from .RegionBase import JakAndDaxterRegion
+from .. import EnableOrbsanity, JakAndDaxterWorld
+from ..Rules import can_reach_orbs_level
 from ..locs import CellLocations as Cells, ScoutLocations as Scouts
 
 
-def build_regions(level_name: str, world: JakAndDaxterWorld, multiworld: MultiWorld, options: JakAndDaxterOptions, player: int) -> List[JakAndDaxterRegion]:
+def build_regions(level_name: str, world: JakAndDaxterWorld) -> List[JakAndDaxterRegion]:
+    multiworld = world.multiworld
+    options = world.options
+    player = world.player
 
     main_area = JakAndDaxterRegion("Main Area", player, multiworld, level_name, 50)
 
