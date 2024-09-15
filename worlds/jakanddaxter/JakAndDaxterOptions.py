@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from Options import PerGameCommonOptions, StartInventoryPool, Toggle, Choice, Range
+from Options import PerGameCommonOptions, StartInventoryPool, Toggle, Choice, Range, DefaultOnToggle
 
 
 class EnableMoveRandomizer(Toggle):
@@ -73,6 +73,13 @@ class PerLevelOrbsanityBundleSize(Choice):
     option_50_orbs = 50
     multiplayer_minimum = 10
     default = 25
+
+class ForceOrderedCellCounts(DefaultOnToggle):
+    """Automatically reorders cell count requirements for Fire Canyon, Mountain Pass and Lava Tube.
+    Particularly recommended if you're using random cell counts with overlapping ranges.
+
+    Uncheck if you wish to have "free" requirements (e.g: Fire Canyon requiring 20 cells and Mountain Pass requiring 0 to 19)"""
+    display_name = "Force Ordered Cell Counts"
 
 
 class FireCanyonCellCount(Range):
@@ -163,6 +170,7 @@ class JakAndDaxterOptions(PerGameCommonOptions):
     enable_orbsanity: EnableOrbsanity
     global_orbsanity_bundle_size: GlobalOrbsanityBundleSize
     level_orbsanity_bundle_size: PerLevelOrbsanityBundleSize
+    force_ordered_cell_counts: ForceOrderedCellCounts
     fire_canyon_cell_count: FireCanyonCellCount
     mountain_pass_cell_count: MountainPassCellCount
     lava_tube_cell_count: LavaTubeCellCount
