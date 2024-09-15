@@ -124,6 +124,14 @@ def can_fight(state: CollectionState, player: int) -> bool:
     return state.has_any({"Jump Dive", "Jump Kick", "Punch", "Kick"}, player)
 
 
+def reorder_cell_counts(world: JakAndDaxterWorld):
+    options = world.options
+    world.power_cell_thresholds.sort()
+    options.fire_canyon_cell_count.value = world.power_cell_thresholds[0]
+    options.mountain_pass_cell_count.value = world.power_cell_thresholds[1]
+    options.lava_tube_cell_count.value = world.power_cell_thresholds[2]
+
+
 def enforce_multiplayer_limits(world: JakAndDaxterWorld):
     options = world.options
     friendly_message = ""

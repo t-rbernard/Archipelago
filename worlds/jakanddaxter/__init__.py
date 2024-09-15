@@ -129,6 +129,16 @@ class JakAndDaxterWorld(World):
 
     # Handles various options validation, rules enforcement, and caching of important information.
     def generate_early(self) -> None:
+        # Cache the power cell threshold values for quicker reference
+        self.power_cell_thresholds = [self.options.fire_canyon_cell_count.value,
+                                     self.options.mountain_pass_cell_count.value,
+                                     self.options.lava_tube_cell_count.value, 100]
+
+        # Before checking friendly options, reorder cell requirements if the option is set (default is true)
+        if self.options.force_ordered_cell_counts.value:
+            from .Rules import reorder_cell_counts
+            reorder_cell_counts(self)
+
         # For the fairness of other players in a multiworld game, enforce some friendly limitations on our options,
         # so we don't cause chaos during seed generation. These friendly limits should **guarantee** a successful gen.
         enforce_friendly_options = Utils.get_settings()["jakanddaxter_options"]["enforce_friendly_options"]
@@ -156,13 +166,6 @@ class JakAndDaxterWorld(World):
         else:
             self.orb_bundle_size = 0
             self.orb_bundle_item_name = ""
-
-        # Cache the power cell threshold values for quicker reference.
-        self.power_cell_thresholds = []
-        self.power_cell_thresholds.append(self.options.fire_canyon_cell_count.value)
-        self.power_cell_thresholds.append(self.options.mountain_pass_cell_count.value)
-        self.power_cell_thresholds.append(self.options.lava_tube_cell_count.value)
-        self.power_cell_thresholds.append(100)  # The 100 Power Cell Door.
 
         # Options drive which trade rules to use, so they need to be setup before we create_regions.
         from .Rules import set_orb_trade_rule
